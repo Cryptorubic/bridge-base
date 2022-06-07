@@ -34,6 +34,10 @@ abstract contract SingleTokenFee is BridgeBase, ReentrancyGuardUpgradeable {
         );
 
         transitToken = _transitToken;
+
+        for (uint256 i = 0; i < _routers.length; i++) {
+            IERC20Upgradeable(_transitToken).safeApprove(_routers[i], type(uint256).max);
+        }
     }
 
     function calculateFee(
