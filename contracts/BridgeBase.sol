@@ -227,6 +227,14 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         return hasRole(RELAYER_ROLE, _who);
     }
 
+    /**
+     * @dev Function to check if address is belongs to validator role
+     * @param _who Address to check
+     */
+    function isValidator(address _who) public view returns (bool) {
+        return hasRole(VALIDATOR_ROLE, _who);
+    }
+
     /// UTILS ///
 
     function smartApprove(
