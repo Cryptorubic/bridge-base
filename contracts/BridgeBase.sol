@@ -24,6 +24,9 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
     mapping(uint256 => uint256) public feeAmountOfBlockchain;
     mapping(uint256 => uint256) public blockchainCryptoFee;
 
+    mapping(address => uint256) public integratorFee;
+    mapping(address => uint256) public platformShare;
+
     mapping(bytes32 => SwapStatus) public processedTransactions;
 
     EnumerableSetUpgradeable.AddressSet internal availableRouters;
@@ -102,6 +105,17 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
 
     function collectCryptoFee(address payable _to) external onlyManagerAndAdmin {
         AddressUpgradeable.sendValue(_to, address(this).balance);
+    }
+
+    function setIntegratorFee(
+        address _integrator,
+        uint256 _fee,
+        uint256 _platformShare
+    ) external onlyManagerAndAdmin {
+        require(_fee <= 1000000, 'BridgeBase: fee too high');
+
+        integratorFee[_integrator] = _fee;
+        platformShare[_integrator] = _platformShare;
     }
 
     /**

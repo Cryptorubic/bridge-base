@@ -15,8 +15,6 @@ abstract contract SingleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
 
     uint256 public availableRubicFee;
     mapping(address => uint256) public availableIntegratorFee;
-    mapping(address => uint256) public integratorFee;
-    mapping(address => uint256) public platformShare;
 
     function __SingleTransitTokenInit(
         uint256[] memory _blockchainIDs,

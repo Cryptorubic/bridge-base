@@ -15,8 +15,6 @@ abstract contract MultipleTransitToken is BridgeBase, ReentrancyGuardUpgradeable
 
     mapping(address => uint256) public availableRubicFee;
     mapping(address => mapping(address => uint256)) public availableIntegratorFee;
-    mapping(address => uint256) public integratorFee;
-    mapping(address => uint256) public platformShare;
 
     function __MultipleTransitTokenInit(
         uint256[] memory _blockchainIDs,
