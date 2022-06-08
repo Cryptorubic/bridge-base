@@ -19,8 +19,6 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
     uint256 public constant SIGNATURE_LENGTH = 65;
 
     uint256 public numOfThisBlockchain;
-    uint256 public minTokenAmount;
-    uint256 public maxTokenAmount;
     uint256 public minConfirmationSignatures;
 
     mapping(uint256 => uint256) public feeAmountOfBlockchain;
@@ -70,8 +68,6 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         uint256[] memory _blockchainIDs,
         uint256[] memory _cryptoFees,
         uint256[] memory _platformFees,
-        uint256 _minTokenAmount,
-        uint256 _maxTokenAmount,
         address[] memory _routers
     ) internal onlyInitializing {
         __Pausable_init_unchained();
@@ -90,8 +86,6 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
             availableRouters.add(_routers[i]);
         }
 
-        minTokenAmount = _minTokenAmount;
-        maxTokenAmount = _maxTokenAmount;
         minConfirmationSignatures = 3;
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
     }
@@ -111,8 +105,8 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
     }
 
     /**
-     * @dev Changes fee values for blockchains in feeAmountOfBlockchain variables
-     * @notice fee is represented as hundredths of a bip, i.e. 1e-6
+     * @dev Changes tokens values for blockchains in feeAmountOfBlockchain variables
+     * @notice tokens is represented as hundredths of a bip, i.e. 1e-6
      * @param _blockchainID ID of the blockchain
      * @param _feeAmount Fee amount to subtract from transfer amount
      */
@@ -124,7 +118,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
     }
 
     /**
-     * @dev Changes crypto fee values for blockchains in blockchainCryptoFee variables
+     * @dev Changes crypto tokens values for blockchains in blockchainCryptoFee variables
      * @param _blockchainID ID of the blockchain
      * @param _feeAmount Fee amount of native token that must be sent in init call
      */
@@ -148,28 +142,6 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
             "BridgeBase: At least 1 confirmation can be set"
         );
         minConfirmationSignatures = _minConfirmationSignatures;
-    }
-
-    /**
-     * @dev Changes requirement for minimal token amount on transfers
-     * @param _minTokenAmount Amount of tokens
-     */
-    function setMinTokenAmount(uint256 _minTokenAmount)
-        external
-        onlyManagerAndAdmin
-    {
-        minTokenAmount = _minTokenAmount;
-    }
-
-    /**
-     * @dev Changes requirement for maximum token amount on transfers
-     * @param _maxTokenAmount Amount of tokens
-     */
-    function setMaxTokenAmount(uint256 _maxTokenAmount)
-        external
-        onlyManagerAndAdmin
-    {
-        maxTokenAmount = _maxTokenAmount;
     }
 
     function transferAdmin(address _newAdmin) external onlyAdmin {

@@ -7,30 +7,38 @@ import '@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "../BridgeBase.sol";
 import "../libraries/FullMath.sol";
 
-abstract contract ManyTokenFee is BridgeBase, ReentrancyGuardUpgradeable {
+abstract contract MultipleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
+
+    mapping(address => uint256) public minTokenAmount;
+    mapping(address => uint256) public maxTokenAmount;
 
     mapping(address => uint256) public availableRubicFee;
     mapping(address => mapping(address => uint256)) public availableIntegratorFee;
     mapping(address => uint256) public integratorFee;
     mapping(address => uint256) public platformShare;
 
-    function __ManyTokenFeeInit(
+    function __MultipleTransitTokenInit(
         uint256[] memory _blockchainIDs,
         uint256[] memory _cryptoFees,
         uint256[] memory _platformFees,
-        uint256 _minTokenAmount,
-        uint256 _maxTokenAmount,
+        address[] memory _tokens,
+        uint256[] memory _minTokenAmounts,
+        uint256[] memory _maxTokenAmounts,
         address[] memory _routers
     ) internal onlyInitializing {
         __BridgeBaseInit(
             _blockchainIDs,
             _cryptoFees,
             _platformFees,
-            _minTokenAmount,
-            _maxTokenAmount,
             _routers
         );
+
+        for (uint i=0; i < _tokens.length; i++) {
+            require(_minTokenAmounts[i] < _maxTokenAmounts[i], 'MultipleTransitToken: min >= max');
+            minTokenAmount[_tokens[i]] = _minTokenAmounts[i];
+            maxTokenAmount[_tokens[i]] = _maxTokenAmounts[i];
+        }
     }
 
     function calculateFee(
@@ -77,7 +85,7 @@ abstract contract ManyTokenFee is BridgeBase, ReentrancyGuardUpgradeable {
 
     function collectIntegratorFee(address _token) external nonReentrant {
         uint256 amount = availableIntegratorFee[_token][msg.sender];
-        require(amount > 0, 'ManyTokenFee: amount is zero');
+        require(amount > 0, 'MultipleTransitToken: amount is zero');
 
         availableIntegratorFee[_token][msg.sender] = 0;
 
@@ -90,7 +98,7 @@ abstract contract ManyTokenFee is BridgeBase, ReentrancyGuardUpgradeable {
 
     function collectIntegratorFee(address _token, address _integrator) external onlyManagerAndAdmin {
         uint256 amount = availableIntegratorFee[_token][_integrator];
-        require(amount > 0, 'ManyTokenFee: amount is zero');
+        require(amount > 0, 'MultipleTransitToken: amount is zero');
 
         availableIntegratorFee[_token][_integrator] = 0;
 
@@ -103,7 +111,7 @@ abstract contract ManyTokenFee is BridgeBase, ReentrancyGuardUpgradeable {
 
     function collectRubicFee(address _token) external onlyManagerAndAdmin {
         uint256 amount = availableRubicFee[_token];
-        require(amount > 0, 'ManyTokenFee: amount is zero');
+        require(amount > 0, 'MultipleTransitToken: amount is zero');
 
         availableRubicFee[_token] = 0;
 
@@ -112,5 +120,29 @@ abstract contract ManyTokenFee is BridgeBase, ReentrancyGuardUpgradeable {
         } else {
             IERC20Upgradeable(_token).safeTransfer(msg.sender, amount);
         }
+    }
+
+    /**
+     * @dev Changes requirement for minimal token amount on transfers
+     * @param _token The token address to setup
+     * @param _minTokenAmount Amount of tokens
+     */
+    function setMinTokenAmount(address _token, uint256 _minTokenAmount)
+        external
+        onlyManagerAndAdmin
+    {
+        minTokenAmount[_token] = _minTokenAmount;
+    }
+
+    /**
+     * @dev Changes requirement for maximum token amount on transfers
+     * @param _token The token address to setup
+     * @param _maxTokenAmount Amount of tokens
+     */
+    function setMaxTokenAmount(address _token, uint256 _maxTokenAmount)
+        external
+        onlyManagerAndAdmin
+    {
+        maxTokenAmount[_token] = _maxTokenAmount;
     }
 }
