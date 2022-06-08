@@ -24,7 +24,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
     mapping(uint256 => uint256) public feeAmountOfBlockchain;
     mapping(uint256 => uint256) public blockchainCryptoFee;
 
-    mapping(bytes32 => uint256) public processedTransactions;
+    mapping(bytes32 => SwapStatus) public processedTransactions;
 
     EnumerableSetUpgradeable.AddressSet internal availableRouters;
 
@@ -151,22 +151,24 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
 
     /**
      * @dev Function changes values associated with certain originalTxHash
-     * @param originalTxHash Transaction hash to change
-     * @param statusCode Associated status: 0-Not processed, 1-Processed, 2-Reverted
+     * @param _id ID of the transaction to change
+     * @param _statusCode Associated status
      */
-    function changeTxStatus(bytes32 originalTxHash, uint256 statusCode)
+    function changeTxStatus(bytes32 _id, SwapStatus _statusCode)
         external
         onlyRelayer
     {
         require(
-            statusCode != 0,
-            "swapContract: you cannot set the statusCode to 0"
+            _statusCode != SwapStatus.Null,
+            "BridgeBase: cannot set the statusCode to Null"
         );
         require(
-            processedTransactions[originalTxHash] != 1,
-            "swapContract: transaction with this originalTxHash has already been set as succeed"
+            processedTransactions[_id] != SwapStatus.Succeeded &&
+            processedTransactions[_id] != SwapStatus.Fallback,
+            "BridgeBase: cannot change Succeeded or Fallback status"
         );
-        processedTransactions[originalTxHash] = statusCode;
+
+        processedTransactions[_id] = _statusCode;
     }
 
     /// VIEW FUNCTIONS ///
