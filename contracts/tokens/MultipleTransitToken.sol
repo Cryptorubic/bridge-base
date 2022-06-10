@@ -39,6 +39,7 @@ abstract contract MultipleTransitToken is BridgeBase, ReentrancyGuardUpgradeable
         }
     }
 
+    // rename for each? calculateFeeMulty
     function calculateFee(
         address integrator,
         uint256 amountWithFee,

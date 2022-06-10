@@ -42,6 +42,7 @@ abstract contract SingleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
         }
     }
 
+    // what is init? is it needed? init is source?
     function calculateFee(
         address integrator,
         uint256 amountWithFee,
