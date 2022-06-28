@@ -93,6 +93,18 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
+    function _sendToken(
+        address _token,
+        uint256 _amount,
+        address _receiver
+    ) internal {
+        if (_token == address(0)) {
+            AddressUpgradeable.sendValue(payable(_receiver), _amount);
+        } else {
+            IERC20Upgradeable(_token).safeTransfer(_receiver, _amount);
+        }
+    }
+
     /// CONTROL FUNCTIONS ///
 
     function pauseExecution() external onlyManagerAndAdmin { // TODO: add blockchain pause
@@ -104,7 +116,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
     }
 
     function collectCryptoFee(address payable _to) external onlyManagerAndAdmin {
-        AddressUpgradeable.sendValue(_to, address(this).balance);
+        _to.transfer(address(this).balance);
     }
 
     function setIntegratorFee(

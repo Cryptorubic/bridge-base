@@ -86,11 +86,7 @@ contract MultipleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
 
         availableIntegratorFee[_token][msg.sender] = 0;
 
-        if (_token == address(0)) {
-            AddressUpgradeable.sendValue(payable(msg.sender), amount);
-        } else {
-            IERC20Upgradeable(_token).safeTransfer(msg.sender, amount);
-        }
+        _sendToken(_token, amount, msg.sender);
     }
 
     function collectIntegratorFee(address _token, address _integrator) external onlyManagerAndAdmin {
@@ -99,11 +95,7 @@ contract MultipleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
 
         availableIntegratorFee[_token][_integrator] = 0;
 
-        if (_token == address(0)) {
-            AddressUpgradeable.sendValue(payable(_integrator), amount);
-        } else {
-            IERC20Upgradeable(_token).safeTransfer(_integrator, amount);
-        }
+        _sendToken(_token, amount, _integrator);
     }
 
     function collectRubicFee(address _token) external onlyManagerAndAdmin {
@@ -112,11 +104,7 @@ contract MultipleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
 
         availableRubicFee[_token] = 0;
 
-        if (_token == address(0)) {
-            AddressUpgradeable.sendValue(payable(msg.sender), amount);
-        } else {
-            IERC20Upgradeable(_token).safeTransfer(msg.sender, amount);
-        }
+        _sendToken(_token, amount, msg.sender);
     }
 
     /**

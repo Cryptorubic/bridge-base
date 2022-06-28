@@ -55,13 +55,13 @@ contract SingleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
                 uint256 _integratorAndProtocolFee = FullMath.mulDiv(
                     amountWithFee,
                     integratorPercent,
-                    1e6
+                    DENOMINATOR
                 );
 
                 uint256 _platformFee = FullMath.mulDiv(
                     _integratorAndProtocolFee,
                     platformPercent,
-                    1e6
+                    DENOMINATOR
                 );
 
                 availableIntegratorFee[integrator] += _integratorAndProtocolFee - _platformFee;
@@ -74,8 +74,8 @@ contract SingleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
         } else {
             amountWithoutFee = FullMath.mulDiv(
                 amountWithFee,
-                1e6 - feeAmountOfBlockchain[initBlockchainNum],
-                1e6
+                DENOMINATOR - feeAmountOfBlockchain[initBlockchainNum],
+                DENOMINATOR
             );
 
             availableRubicFee += amountWithFee - amountWithoutFee;
