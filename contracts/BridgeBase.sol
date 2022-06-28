@@ -14,11 +14,11 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     uint256 internal constant DENOMINATOR = 1e6;
+    uint256 public constant SIGNATURE_LENGTH = 65;
 
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
     bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
     bytes32 public constant VALIDATOR_ROLE = keccak256("VALIDATOR_ROLE");
-    uint256 public constant SIGNATURE_LENGTH = 65;
 
     uint256 public minConfirmationSignatures; // TODO: remove?
 
@@ -165,7 +165,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
     {
         require(
             _minConfirmationSignatures > 0,
-            "BridgeBase: At least 1 confirmation can be set"
+            "BridgeBase: min = 1"
         );
         minConfirmationSignatures = _minConfirmationSignatures;
     }
@@ -186,12 +186,12 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
     {
         require(
             _statusCode != SwapStatus.Null,
-            "BridgeBase: cannot set the statusCode to Null"
+            "BridgeBase: cant set to Null"
         );
         require(
             processedTransactions[_id] != SwapStatus.Succeeded &&
             processedTransactions[_id] != SwapStatus.Fallback,
-            "BridgeBase: cannot change Succeeded or Fallback status"
+            "BridgeBase: unchangeable"
         );
 
         processedTransactions[_id] = _statusCode;
