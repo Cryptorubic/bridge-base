@@ -13,23 +13,24 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
+    uint256 internal constant DENOMINATOR = 1e6;
+
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
     bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
     bytes32 public constant VALIDATOR_ROLE = keccak256("VALIDATOR_ROLE");
     uint256 public constant SIGNATURE_LENGTH = 65;
 
-    uint256 public numOfThisBlockchain;
-    uint256 public minConfirmationSignatures;
+    uint256 public minConfirmationSignatures; // TODO: remove?
 
     mapping(uint256 => uint256) public feeAmountOfBlockchain;
     mapping(uint256 => uint256) public blockchainCryptoFee;
 
-    mapping(address => uint256) public integratorFee;
+    mapping(address => uint256) public integratorFee; // TODO: check whether integrator is valid
     mapping(address => uint256) public platformShare;
 
     mapping(bytes32 => SwapStatus) public processedTransactions;
 
-    EnumerableSetUpgradeable.AddressSet internal availableRouters;
+    EnumerableSetUpgradeable.AddressSet internal availableRouters; // TODO: setter
 
     enum SwapStatus {
         Null,
@@ -39,25 +40,24 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
     }
     
     modifier onlyAdmin() {
-        require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), 'BridgeBase: Caller is not in admin role');
+        require(isAdmin(msg.sender), 'BridgeBase: Caller is not in admin role');
         _;
     }
 
     modifier onlyManagerAndAdmin() {
-        require(hasRole(MANAGER_ROLE, _msgSender()) || hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), 'BridgeBase: Caller is not in manager or admin role');
+        require(isManager(msg.sender) || isAdmin(msg.sender), 'BridgeBase: Caller is not in manager or admin role');
         _;
     }
 
     modifier onlyRelayer() {
-        require(hasRole(RELAYER_ROLE, _msgSender()), 'BridgeBase: Caller is not in relayer role');
+        require(isRelayer(msg.sender), 'BridgeBase: Caller is not in relayer role');
         _;
     }
 
     modifier anyRole() {
         require(
-            hasRole(MANAGER_ROLE, _msgSender()) ||
-            hasRole(RELAYER_ROLE, _msgSender()) ||
-            hasRole(DEFAULT_ADMIN_ROLE, _msgSender()),
+            isManager(msg.sender) ||
+            isRelayer(msg.sender),
             'BridgeBase: Caller is not in any role');
         _;
     }
@@ -80,22 +80,22 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
             'BridgeBase: fees lengths mismatch'
         );
 
-        for (uint256 i = 0; i < _cryptoFees.length; i++) {
+        for (uint256 i; i < _cryptoFees.length; i++) {
             blockchainCryptoFee[_blockchainIDs[i]] = _cryptoFees[i];
             feeAmountOfBlockchain[_blockchainIDs[i]] = _platformFees[i];
         }
 
-        for (uint256 i = 0; i < _routers.length; i++) {
+        for (uint256 i; i < _routers.length; i++) {
             availableRouters.add(_routers[i]);
         }
 
         minConfirmationSignatures = 3;
-        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
     /// CONTROL FUNCTIONS ///
 
-    function pauseExecution() external onlyManagerAndAdmin {
+    function pauseExecution() external onlyManagerAndAdmin { // TODO: add blockchain pause
         _pause();
     }
 
@@ -159,7 +159,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
     }
 
     function transferAdmin(address _newAdmin) external onlyAdmin {
-        _revokeRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        _revokeRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(DEFAULT_ADMIN_ROLE, _newAdmin);
     }
 

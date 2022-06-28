@@ -5,12 +5,11 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import '@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol';
 
 import "../BridgeBase.sol";
-import "../libraries/FullMath.sol";
 
-abstract contract MultipleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
+contract MultipleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
-    mapping(address => uint256) public minTokenAmount;
+    mapping(address => uint256) public minTokenAmount; // TODO: valid if set
     mapping(address => uint256) public maxTokenAmount;
 
     mapping(address => uint256) public availableRubicFee;
@@ -54,13 +53,13 @@ abstract contract MultipleTransitToken is BridgeBase, ReentrancyGuardUpgradeable
                 uint256 _integratorAndProtocolFee = FullMath.mulDiv(
                     amountWithFee,
                     integratorPercent,
-                    1e6
+                    DENOMINATOR
                 );
 
                 uint256 _platformFee = FullMath.mulDiv(
                     _integratorAndProtocolFee,
                     platformPercent,
-                    1e6
+                    DENOMINATOR
                 );
 
                 availableIntegratorFee[token][integrator] += _integratorAndProtocolFee - _platformFee;
@@ -73,8 +72,8 @@ abstract contract MultipleTransitToken is BridgeBase, ReentrancyGuardUpgradeable
         } else {
             amountWithoutFee = FullMath.mulDiv(
                 amountWithFee,
-                1e6 - feeAmountOfBlockchain[initBlockchainNum],
-                1e6
+                DENOMINATOR - feeAmountOfBlockchain[initBlockchainNum],
+                DENOMINATOR
             );
 
             availableRubicFee[token] += amountWithFee - amountWithoutFee;

@@ -3,9 +3,8 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol';
 
 import "../BridgeBase.sol";
-import "../libraries/FullMath.sol";
 
-abstract contract SingleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
+contract SingleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     address public transitToken;
