@@ -1,6 +1,6 @@
 {
   "name": "rubic-bridge-base",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "scripts": {
     "lint": "./node_modules/.bin/solhint -f table contracts/**/*.sol && eslint test/** ",
     "format": "prettier --write contracts/**/*.sol && eslint test/** --fix",
