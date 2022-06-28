@@ -84,7 +84,7 @@ contract SingleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
 
     function collectIntegratorFee() external nonReentrant {
         uint256 amount = availableIntegratorFee[msg.sender];
-        require(amount > 0, 'SingleTransitToken: amount is zero');
+        require(amount > 0, 'STT: amount is zero');
 
         availableIntegratorFee[msg.sender] = 0;
 
@@ -93,7 +93,7 @@ contract SingleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
 
     function collectIntegratorFee(address _integrator) external onlyManagerAndAdmin {
         uint256 amount = availableIntegratorFee[_integrator];
-        require(amount > 0, 'SingleTransitToken: amount is zero');
+        require(amount > 0, 'STT: amount is zero');
 
         availableIntegratorFee[_integrator] = 0;
 
@@ -102,7 +102,7 @@ contract SingleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
 
     function collectRubicFee() external onlyManagerAndAdmin {
         uint256 amount = availableRubicFee;
-        require(amount > 0, 'SingleTransitToken: amount is zero');
+        require(amount > 0, 'STT: amount is zero');
 
         availableRubicFee = 0;
 

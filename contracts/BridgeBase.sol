@@ -40,17 +40,17 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
     }
     
     modifier onlyAdmin() {
-        require(isAdmin(msg.sender), 'BridgeBase: Caller is not in admin role');
+        require(isAdmin(msg.sender), 'BridgeBase: not an admin');
         _;
     }
 
     modifier onlyManagerAndAdmin() {
-        require(isManager(msg.sender) || isAdmin(msg.sender), 'BridgeBase: Caller is not in manager or admin role');
+        require(isManager(msg.sender) || isAdmin(msg.sender), 'BridgeBase: not a manager');
         _;
     }
 
     modifier onlyRelayer() {
-        require(isRelayer(msg.sender), 'BridgeBase: Caller is not in relayer role');
+        require(isRelayer(msg.sender), 'BridgeBase: not a relayer');
         _;
     }
 
@@ -58,7 +58,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         require(
             isManager(msg.sender) ||
             isRelayer(msg.sender),
-            'BridgeBase: Caller is not in any role');
+            'BridgeBase: no role');
         _;
     }
 
@@ -77,7 +77,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
 
         require(
             _cryptoFees.length == _platformFees.length,
-            'BridgeBase: fees lengths mismatch'
+            'BridgeBase: fees length mismatch'
         );
 
         for (uint256 i; i < _cryptoFees.length; i++) {
