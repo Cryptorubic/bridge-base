@@ -97,7 +97,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         address _token,
         uint256 _amount,
         address _receiver
-    ) internal {
+    ) internal virtual {
         if (_token == address(0)) {
             AddressUpgradeable.sendValue(payable(_receiver), _amount);
         } else {
