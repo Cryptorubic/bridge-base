@@ -14,13 +14,10 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     uint256 internal constant DENOMINATOR = 1e6;
-    uint256 public constant SIGNATURE_LENGTH = 65;
 
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
     bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
     bytes32 public constant VALIDATOR_ROLE = keccak256("VALIDATOR_ROLE");
-
-    uint256 public minConfirmationSignatures; // TODO: remove?
 
     mapping(uint256 => uint256) public feeAmountOfBlockchain;
     mapping(uint256 => uint256) public blockchainCryptoFee;
@@ -155,20 +152,6 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         blockchainCryptoFee[_blockchainID] = _feeAmount;
     }
 
-    /**
-     * @dev Changes requirement for minimal amount of signatures to validate on transfer
-     * @param _minConfirmationSignatures Number of signatures to verify
-     */
-    function setMinConfirmationSignatures(uint256 _minConfirmationSignatures)
-        external
-        onlyAdmin
-    {
-        require(
-            _minConfirmationSignatures > 0,
-            "BridgeBase: min = 1"
-        );
-        minConfirmationSignatures = _minConfirmationSignatures;
-    }
 
     function transferAdmin(address _newAdmin) external onlyAdmin {
         _revokeRole(DEFAULT_ADMIN_ROLE, msg.sender);
