@@ -27,7 +27,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
 
     mapping(bytes32 => SwapStatus) public processedTransactions;
 
-    EnumerableSetUpgradeable.AddressSet internal availableRouters; // TODO: setter
+    EnumerableSetUpgradeable.AddressSet internal availableRouters;
 
     enum SwapStatus {
         Null,
@@ -152,6 +152,10 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         blockchainCryptoFee[_blockchainID] = _feeAmount;
     }
 
+    function addAvailableRouter(address _router) external onlyManagerAndAdmin {
+        require(_router != address(0), 'BridgeBase: router = 0');
+        availableRouters.add(_router);
+    }
 
     function transferAdmin(address _newAdmin) external onlyAdmin {
         _revokeRole(DEFAULT_ADMIN_ROLE, msg.sender);
