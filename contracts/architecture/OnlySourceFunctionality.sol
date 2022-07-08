@@ -12,7 +12,7 @@ contract OnlySourceFunctionality is BridgeBase {
     ) internal onlyInitializing {
         __BridgeBaseInit(_fixedCryptoFee, _routers);
 
-        require(_RubicPlatformFee <= DENOMINATOR, 'OSF: Rubic Fee to high');
+        require(_RubicPlatformFee <= DENOMINATOR, 'OSF: Rubic Fee too high');
 
         _RubicPlatformFee = RubicPlatformFee;
     }

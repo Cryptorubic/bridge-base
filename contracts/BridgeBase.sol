@@ -140,6 +140,10 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         availableRouters.add(_router);
     }
 
+    function removeAvailableRouter(address _router) external onlyManagerAndAdmin {
+        availableRouters.remove(_router);
+    }
+
     function transferAdmin(address _newAdmin) external onlyAdmin {
         _revokeRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(DEFAULT_ADMIN_ROLE, _newAdmin);
