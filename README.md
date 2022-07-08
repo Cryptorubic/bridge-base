@@ -127,11 +127,6 @@ contract SwapBase is MultipleTransitToken {
 2) MANAGER_ROLE:
    * view функция для проверки isManager()
    * Доступные модификаторы: onlyManagerAndAdmin, anyRole
-3) RELAYER_ROLE:
-   * view функция для проверки isRelayer()
-   * Доступные модификаторы: onlyRelayer, anyRole
-4) VALIDATOR_ROLE:
-   * view функция для проверки isValidator()
 
 ##### Комиссии
 
