@@ -2,7 +2,7 @@ pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol';
 
-import "../BridgeBase.sol";
+import '../BridgeBase.sol';
 
 contract SingleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -16,20 +16,13 @@ contract SingleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
     mapping(address => uint256) public availableIntegratorFee;
 
     function __SingleTransitTokenInit(
-        uint256[] memory _blockchainIDs,
-        uint256[] memory _cryptoFees,
-        uint256[] memory _platformFees,
+        uint256 _fixedCryptoFee,
+        address[] memory _routers,
         address _transitToken,
         uint256 _minTokenAmount,
-        uint256 _maxTokenAmount,
-        address[] memory _routers
+        uint256 _maxTokenAmount
     ) internal onlyInitializing {
-        __BridgeBaseInit(
-            _blockchainIDs,
-            _cryptoFees,
-            _platformFees,
-            _routers
-        );
+        __BridgeBaseInit(_fixedCryptoFee, _routers);
 
         transitToken = _transitToken;
 
@@ -41,45 +34,19 @@ contract SingleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
         }
     }
 
-    function calculateFee(
-        address integrator,
-        uint256 amountWithFee,
-        uint256 initBlockchainNum
-    ) internal virtual returns(uint256 amountWithoutFee) {
-        if (integrator != address(0)){
-            uint256 integratorPercent = integratorFee[integrator];
+    function accrueTokenFees(
+        address _integrator,
+        uint256 _amountWithFee,
+        uint256 _initBlockchainNum
+    ) internal returns (uint256) {
+        (uint256 _totalFees, uint256 _RubicFee) = _calculateFee(_integrator, _amountWithFee, _initBlockchainNum);
 
-            if (integratorPercent > 0){
-                uint256 platformPercent = platformShare[integrator];
-
-                uint256 _integratorAndProtocolFee = FullMath.mulDiv(
-                    amountWithFee,
-                    integratorPercent,
-                    DENOMINATOR
-                );
-
-                uint256 _platformFee = FullMath.mulDiv(
-                    _integratorAndProtocolFee,
-                    platformPercent,
-                    DENOMINATOR
-                );
-
-                availableIntegratorFee[integrator] += _integratorAndProtocolFee - _platformFee;
-                availableRubicFee += _platformFee;
-
-                amountWithoutFee = amountWithFee - _integratorAndProtocolFee;
-            } else {
-                amountWithoutFee = amountWithFee;
-            }
-        } else {
-            amountWithoutFee = FullMath.mulDiv(
-                amountWithFee,
-                DENOMINATOR - feeAmountOfBlockchain[initBlockchainNum],
-                DENOMINATOR
-            );
-
-            availableRubicFee += amountWithFee - amountWithoutFee;
+        if (_integrator != address(0)) {
+            availableIntegratorFee[_integrator] += _totalFees - _RubicFee;
         }
+        availableRubicFee += _RubicFee;
+
+        return _amountWithFee - _totalFees;
     }
 
     function collectIntegratorFee() external nonReentrant {
@@ -113,10 +80,7 @@ contract SingleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
      * @dev Changes requirement for minimal token amount on transfers
      * @param _minTokenAmount Amount of tokens
      */
-    function setMinTokenAmount(uint256 _minTokenAmount)
-        external
-        onlyManagerAndAdmin
-    {
+    function setMinTokenAmount(uint256 _minTokenAmount) external onlyManagerAndAdmin {
         minTokenAmount = _minTokenAmount;
     }
 
@@ -124,10 +88,7 @@ contract SingleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
      * @dev Changes requirement for maximum token amount on transfers
      * @param _maxTokenAmount Amount of tokens
      */
-    function setMaxTokenAmount(uint256 _maxTokenAmount)
-        external
-        onlyManagerAndAdmin
-    {
+    function setMaxTokenAmount(uint256 _maxTokenAmount) external onlyManagerAndAdmin {
         maxTokenAmount = _maxTokenAmount;
     }
 }

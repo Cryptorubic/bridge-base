@@ -1,10 +1,10 @@
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import '@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol';
 
-import "../BridgeBase.sol";
+import '../BridgeBase.sol';
 
 contract MultipleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -16,68 +16,35 @@ contract MultipleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
     mapping(address => mapping(address => uint256)) public availableIntegratorFee;
 
     function __MultipleTransitTokenInit(
-        uint256[] memory _blockchainIDs,
-        uint256[] memory _cryptoFees,
-        uint256[] memory _platformFees,
+        uint256 _fixedCryptoFee,
+        address[] memory _routers,
         address[] memory _tokens,
         uint256[] memory _minTokenAmounts,
-        uint256[] memory _maxTokenAmounts,
-        address[] memory _routers
+        uint256[] memory _maxTokenAmounts
     ) internal onlyInitializing {
-        __BridgeBaseInit(
-            _blockchainIDs,
-            _cryptoFees,
-            _platformFees,
-            _routers
-        );
+        __BridgeBaseInit(_fixedCryptoFee, _routers);
 
-        for (uint i=0; i < _tokens.length; i++) {
+        for (uint256 i = 0; i < _tokens.length; i++) {
             require(_minTokenAmounts[i] < _maxTokenAmounts[i], 'MTT: min >= max');
             minTokenAmount[_tokens[i]] = _minTokenAmounts[i];
             maxTokenAmount[_tokens[i]] = _maxTokenAmounts[i];
         }
     }
 
-    function calculateFee(
-        address integrator,
-        uint256 amountWithFee,
-        uint256 initBlockchainNum,
-        address token
-    ) internal virtual returns(uint256 amountWithoutFee) {
-        if (integrator != address(0)){
-            uint256 integratorPercent = integratorFee[integrator];
+    function accrueTokenFees(
+        address _integrator,
+        uint256 _amountWithFee,
+        uint256 _initBlockchainNum,
+        address _token
+    ) internal returns (uint256) {
+        (uint256 _totalFees, uint256 _RubicFee) = _calculateFee(_integrator, _amountWithFee, _initBlockchainNum);
 
-            if (integratorPercent > 0){
-                uint256 platformPercent = platformShare[integrator];
-
-                uint256 _integratorAndProtocolFee = FullMath.mulDiv(
-                    amountWithFee,
-                    integratorPercent,
-                    DENOMINATOR
-                );
-
-                uint256 _platformFee = FullMath.mulDiv(
-                    _integratorAndProtocolFee,
-                    platformPercent,
-                    DENOMINATOR
-                );
-
-                availableIntegratorFee[token][integrator] += _integratorAndProtocolFee - _platformFee;
-                availableRubicFee[token] += _platformFee;
-
-                amountWithoutFee = amountWithFee - _integratorAndProtocolFee;
-            } else {
-                amountWithoutFee = amountWithFee;
-            }
-        } else {
-            amountWithoutFee = FullMath.mulDiv(
-                amountWithFee,
-                DENOMINATOR - feeAmountOfBlockchain[initBlockchainNum],
-                DENOMINATOR
-            );
-
-            availableRubicFee[token] += amountWithFee - amountWithoutFee;
+        if (_integrator != address(0)) {
+            availableIntegratorFee[_token][_integrator] += _totalFees - _RubicFee;
         }
+        availableRubicFee[_token] += _RubicFee;
+
+        return _amountWithFee - _totalFees;
     }
 
     function collectIntegratorFee(address _token) external nonReentrant {
@@ -112,10 +79,7 @@ contract MultipleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
      * @param _token The token address to setup
      * @param _minTokenAmount Amount of tokens
      */
-    function setMinTokenAmount(address _token, uint256 _minTokenAmount)
-        external
-        onlyManagerAndAdmin
-    {
+    function setMinTokenAmount(address _token, uint256 _minTokenAmount) external onlyManagerAndAdmin {
         minTokenAmount[_token] = _minTokenAmount;
     }
 
@@ -124,10 +88,7 @@ contract MultipleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
      * @param _token The token address to setup
      * @param _maxTokenAmount Amount of tokens
      */
-    function setMaxTokenAmount(address _token, uint256 _maxTokenAmount)
-        external
-        onlyManagerAndAdmin
-    {
+    function setMaxTokenAmount(address _token, uint256 _maxTokenAmount) external onlyManagerAndAdmin {
         maxTokenAmount[_token] = _maxTokenAmount;
     }
 }

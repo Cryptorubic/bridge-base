@@ -1,13 +1,13 @@
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
+import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol';
 
-import "./libraries/ECDSAOffsetRecovery.sol";
-import "./libraries/FullMath.sol";
+import './libraries/ECDSAOffsetRecovery.sol';
+import './libraries/FullMath.sol';
 
 contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffsetRecovery {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
@@ -15,26 +15,25 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
 
     uint256 internal constant DENOMINATOR = 1e6;
 
-    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
-    bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
-
-    mapping(uint256 => uint256) public feeAmountOfBlockchain;
-    mapping(uint256 => uint256) public blockchainCryptoFee;
+    bytes32 public constant MANAGER_ROLE = keccak256('MANAGER_ROLE');
 
     mapping(address => uint256) public integratorFee; // TODO: check whether integrator is valid
     mapping(address => uint256) public platformShare;
 
-    mapping(bytes32 => SwapStatus) public processedTransactions;
+    uint256 public fixedCryptoFee;
+    uint256 public collectedCryptoFee;
 
     EnumerableSetUpgradeable.AddressSet internal availableRouters;
 
-    enum SwapStatus {
-        Null,
-        Succeeded,
-        Failed,
-        Fallback
+    struct BaseCrossChainParams {
+        address srcInputToken;
+        address dstOutputToken;
+        address integrator;
+        uint256 srcInputAmount;
+        uint256 dstMinOutputAmount;
+        uint256 dstChainID;
     }
-    
+
     modifier onlyAdmin() {
         require(isAdmin(msg.sender), 'BridgeBase: not an admin');
         _;
@@ -45,47 +44,20 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         _;
     }
 
-    modifier onlyRelayer() {
-        require(isRelayer(msg.sender), 'BridgeBase: not a relayer');
-        _;
-    }
-
-    modifier anyRole() {
-        require(
-            isManager(msg.sender) ||
-            isRelayer(msg.sender),
-            'BridgeBase: no role');
-        _;
-    }
-
     modifier onlyEOA() {
         require(msg.sender == tx.origin, 'BridgeBase: only EOA');
         _;
     }
 
-    function __BridgeBaseInit(
-        uint256[] memory _blockchainIDs,
-        uint256[] memory _cryptoFees,
-        uint256[] memory _platformFees,
-        address[] memory _routers
-    ) internal onlyInitializing {
+    function __BridgeBaseInit(uint256 _fixedCryptoFee, address[] memory _routers) internal onlyInitializing {
         __Pausable_init_unchained();
 
-        require(
-            _cryptoFees.length == _platformFees.length,
-            'BridgeBase: fees length mismatch'
-        );
-
-        for (uint256 i; i < _cryptoFees.length; i++) {
-            blockchainCryptoFee[_blockchainIDs[i]] = _cryptoFees[i];
-            feeAmountOfBlockchain[_blockchainIDs[i]] = _platformFees[i];
-        }
+        fixedCryptoFee = _fixedCryptoFee;
 
         for (uint256 i; i < _routers.length; i++) {
             availableRouters.add(_routers[i]);
         }
 
-        minConfirmationSignatures = 3;
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
@@ -101,9 +73,39 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         }
     }
 
+    function _calculateFeeWithIntegrator(uint256 _amountWithFee, address _integrator)
+        internal
+        view
+        returns (uint256 _totalFee, uint256 _RubicFee)
+    {
+        uint256 integratorPercent = integratorFee[_integrator];
+
+        if (integratorPercent > 0) {
+            uint256 platformPercent = platformShare[_integrator];
+
+            _totalFee = FullMath.mulDiv(_amountWithFee, integratorPercent, DENOMINATOR);
+
+            _RubicFee = FullMath.mulDiv(_totalFee, platformPercent, DENOMINATOR);
+        }
+    }
+
+    function _calculateFee(
+        address _integrator,
+        uint256 _amountWithFee,
+        uint256 _initBlockchainNum
+    ) internal virtual returns (uint256 _totalFee, uint256 _RubicFee) {}
+
+    function accrueFixedCryptoFee() internal returns (uint256 _amountWithoutCryptoFee) {
+        uint256 _cryptoFee = fixedCryptoFee;
+        collectedCryptoFee += _cryptoFee;
+
+        _amountWithoutCryptoFee = msg.value - _cryptoFee; // if _cryptoFee > msg.value it would revert (sol 0.8);
+    }
+
     /// CONTROL FUNCTIONS ///
 
-    function pauseExecution() external onlyManagerAndAdmin { // TODO: add blockchain pause
+    function pauseExecution() external onlyManagerAndAdmin {
+        // TODO: add blockchain pause
         _pause();
     }
 
@@ -112,7 +114,10 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
     }
 
     function collectCryptoFee(address payable _to) external onlyManagerAndAdmin {
-        _to.transfer(address(this).balance);
+        uint256 _cryptoFee = collectedCryptoFee;
+        collectedCryptoFee = 0;
+
+        _to.transfer(_cryptoFee);
     }
 
     function setIntegratorFee(
@@ -126,29 +131,8 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         platformShare[_integrator] = _platformShare;
     }
 
-    /**
-     * @dev Changes tokens values for blockchains in feeAmountOfBlockchain variables
-     * @notice tokens is represented as hundredths of a bip, i.e. 1e-6
-     * @param _blockchainID ID of the blockchain
-     * @param _feeAmount Fee amount to subtract from transfer amount
-     */
-    function setFeeAmountOfBlockchain(uint256 _blockchainID, uint256 _feeAmount)
-        external
-        onlyManagerAndAdmin
-    {
-        feeAmountOfBlockchain[_blockchainID] = _feeAmount;
-    }
-
-    /**
-     * @dev Changes crypto tokens values for blockchains in blockchainCryptoFee variables
-     * @param _blockchainID ID of the blockchain
-     * @param _feeAmount Fee amount of native token that must be sent in init call
-     */
-    function setCryptoFeeOfBlockchain(uint256 _blockchainID, uint256 _feeAmount)
-        external
-        anyRole
-    {
-        blockchainCryptoFee[_blockchainID] = _feeAmount;
+    function setFixedCryptoFee(uint256 _fixedCryptoFee) external onlyManagerAndAdmin {
+        fixedCryptoFee = _fixedCryptoFee;
     }
 
     function addAvailableRouter(address _router) external onlyManagerAndAdmin {
@@ -161,31 +145,9 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         _grantRole(DEFAULT_ADMIN_ROLE, _newAdmin);
     }
 
-    /**
-     * @dev Function changes values associated with certain originalTxHash
-     * @param _id ID of the transaction to change
-     * @param _statusCode Associated status
-     */
-    function changeTxStatus(bytes32 _id, SwapStatus _statusCode)
-        external
-        onlyRelayer
-    {
-        require(
-            _statusCode != SwapStatus.Null,
-            "BridgeBase: cant set to Null"
-        );
-        require(
-            processedTransactions[_id] != SwapStatus.Succeeded &&
-            processedTransactions[_id] != SwapStatus.Fallback,
-            "BridgeBase: unchangeable"
-        );
-
-        processedTransactions[_id] = _statusCode;
-    }
-
     /// VIEW FUNCTIONS ///
 
-    function getAvailableRouters() external view returns(address[] memory) {
+    function getAvailableRouters() external view returns (address[] memory) {
         return availableRouters.values();
     }
 
@@ -195,14 +157,6 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
      */
     function isManager(address _who) public view returns (bool) {
         return (hasRole(MANAGER_ROLE, _who));
-    }
-
-    /**
-     * @dev Function to check if address is belongs to relayer role
-     * @param _who Address to check
-     */
-    function isRelayer(address _who) public view returns (bool) {
-        return hasRole(RELAYER_ROLE, _who);
     }
 
     /**
