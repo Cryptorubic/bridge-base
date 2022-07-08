@@ -233,7 +233,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
     receive() external payable {}
 
     /**
-     * @dev Plain fallback function to receive crypto
+     * @dev Plain fallback function
      */
-    fallback() external payable {}
+    fallback() external {}
 }
