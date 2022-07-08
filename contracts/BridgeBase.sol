@@ -16,6 +16,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
     uint256 internal constant DENOMINATOR = 1e6;
 
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+    bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
 
     mapping(uint256 => uint256) public feeAmountOfBlockchain;
     mapping(uint256 => uint256) public blockchainCryptoFee;
@@ -194,6 +195,14 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
      */
     function isManager(address _who) public view returns (bool) {
         return (hasRole(MANAGER_ROLE, _who));
+    }
+
+    /**
+     * @dev Function to check if address is belongs to relayer role
+     * @param _who Address to check
+     */
+    function isRelayer(address _who) public view returns (bool) {
+        return hasRole(RELAYER_ROLE, _who);
     }
 
     /**
