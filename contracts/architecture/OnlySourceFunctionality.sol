@@ -5,13 +5,9 @@ import '../BridgeBase.sol';
 contract OnlySourceFunctionality is BridgeBase {
     uint256 public RubicPlatformFee;
 
-    function __OnlySourceFunctionalityInit(
-        uint256 _fixedCryptoFee,
-        address[] memory _routers,
+    function __OnlySourceFunctionalityInitUnchained(
         uint256 _RubicPlatformFee
     ) internal onlyInitializing {
-        __BridgeBaseInit(_fixedCryptoFee, _routers);
-
         require(_RubicPlatformFee <= DENOMINATOR, 'OSF: Rubic Fee too high');
 
         _RubicPlatformFee = RubicPlatformFee;

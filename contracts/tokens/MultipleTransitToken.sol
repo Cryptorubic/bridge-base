@@ -15,15 +15,11 @@ contract MultipleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
     mapping(address => uint256) public availableRubicFee;
     mapping(address => mapping(address => uint256)) public availableIntegratorFee;
 
-    function __MultipleTransitTokenInit(
-        uint256 _fixedCryptoFee,
-        address[] memory _routers,
+    function __MultipleTransitTokenInitUnchained(
         address[] memory _tokens,
         uint256[] memory _minTokenAmounts,
         uint256[] memory _maxTokenAmounts
     ) internal onlyInitializing {
-        __BridgeBaseInit(_fixedCryptoFee, _routers);
-
         for (uint256 i = 0; i < _tokens.length; i++) {
             require(_minTokenAmounts[i] < _maxTokenAmounts[i], 'MTT: min >= max');
             minTokenAmount[_tokens[i]] = _minTokenAmounts[i];

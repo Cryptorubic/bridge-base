@@ -24,15 +24,11 @@ contract WithDestinationFunctionality is BridgeBase {
         _;
     }
 
-    function __WithDestinationFunctionalityInit(
+    function __WithDestinationFunctionalityInitUnchained(
         uint256 _fixedCryptoFee,
         address[] memory _routers,
-        uint256[] memory _blockchainIDs,
-        uint256[] memory _gasFees,
-        uint256[] memory _RubicPlatformFees
+        uint256[] memory _blockchainIDs
     ) internal onlyInitializing {
-        __BridgeBaseInit(_fixedCryptoFee, _routers);
-
         require(_gasFees.length == _RubicPlatformFees.length, 'WDF: fees length mismatch');
 
         for (uint256 i; i < _gasFees.length; i++) {

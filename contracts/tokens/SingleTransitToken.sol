@@ -15,15 +15,11 @@ contract SingleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
     uint256 public availableRubicFee;
     mapping(address => uint256) public availableIntegratorFee;
 
-    function __SingleTransitTokenInit(
-        uint256 _fixedCryptoFee,
-        address[] memory _routers,
+    function __SingleTransitTokenInitUnchained(
         address _transitToken,
         uint256 _minTokenAmount,
         uint256 _maxTokenAmount
     ) internal onlyInitializing {
-        __BridgeBaseInit(_fixedCryptoFee, _routers);
-
         transitToken = _transitToken;
 
         minTokenAmount = _minTokenAmount;
