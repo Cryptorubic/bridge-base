@@ -85,6 +85,13 @@ contract WithDestinationFunctionality is BridgeBase {
         blockchainToGasFee[_blockchainID] = _gasFee;
     }
 
+    function collectGasFee(address payable _to) external onlyManagerAndAdmin {
+        uint256 _gasFee = collectedGasFee;
+        collectedGasFee = 0;
+
+        _to.transfer(_gasFee);
+    }
+
     /// TX STATUSES MANAGEMENT ///
 
     /**
