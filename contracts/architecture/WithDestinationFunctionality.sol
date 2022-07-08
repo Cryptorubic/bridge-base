@@ -24,7 +24,7 @@ contract WithDestinationFunctionality is BridgeBase {
         _;
     }
 
-    function _WithDestinationFunctionalityInit(
+    function __WithDestinationFunctionalityInit(
         uint256 _fixedCryptoFee,
         address[] memory _routers,
         uint256[] memory _blockchainIDs,

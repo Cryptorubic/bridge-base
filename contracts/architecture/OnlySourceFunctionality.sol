@@ -5,7 +5,7 @@ import '../BridgeBase.sol';
 contract OnlySourceFunctionality is BridgeBase {
     uint256 public RubicPlatformFee;
 
-    function _OnlySourceFunctionalityInit(
+    function __OnlySourceFunctionalityInit(
         uint256 _fixedCryptoFee,
         address[] memory _routers,
         uint256 _RubicPlatformFee
