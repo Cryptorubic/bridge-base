@@ -3,9 +3,8 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol';
 
 import "../BridgeBase.sol";
-import "../libraries/FullMath.sol";
 
-abstract contract SingleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
+contract SingleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     address public transitToken;
@@ -57,13 +56,13 @@ abstract contract SingleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
                 uint256 _integratorAndProtocolFee = FullMath.mulDiv(
                     amountWithFee,
                     integratorPercent,
-                    1e6
+                    DENOMINATOR
                 );
 
                 uint256 _platformFee = FullMath.mulDiv(
                     _integratorAndProtocolFee,
                     platformPercent,
-                    1e6
+                    DENOMINATOR
                 );
 
                 availableIntegratorFee[integrator] += _integratorAndProtocolFee - _platformFee;
@@ -76,8 +75,8 @@ abstract contract SingleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
         } else {
             amountWithoutFee = FullMath.mulDiv(
                 amountWithFee,
-                1e6 - feeAmountOfBlockchain[initBlockchainNum],
-                1e6
+                DENOMINATOR - feeAmountOfBlockchain[initBlockchainNum],
+                DENOMINATOR
             );
 
             availableRubicFee += amountWithFee - amountWithoutFee;
@@ -86,7 +85,7 @@ abstract contract SingleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
 
     function collectIntegratorFee() external nonReentrant {
         uint256 amount = availableIntegratorFee[msg.sender];
-        require(amount > 0, 'SingleTransitToken: amount is zero');
+        require(amount > 0, 'STT: amount is zero');
 
         availableIntegratorFee[msg.sender] = 0;
 
@@ -95,7 +94,7 @@ abstract contract SingleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
 
     function collectIntegratorFee(address _integrator) external onlyManagerAndAdmin {
         uint256 amount = availableIntegratorFee[_integrator];
-        require(amount > 0, 'SingleTransitToken: amount is zero');
+        require(amount > 0, 'STT: amount is zero');
 
         availableIntegratorFee[_integrator] = 0;
 
@@ -104,7 +103,7 @@ abstract contract SingleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
 
     function collectRubicFee() external onlyManagerAndAdmin {
         uint256 amount = availableRubicFee;
-        require(amount > 0, 'SingleTransitToken: amount is zero');
+        require(amount > 0, 'STT: amount is zero');
 
         availableRubicFee = 0;
 
