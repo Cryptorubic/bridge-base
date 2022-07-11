@@ -25,15 +25,15 @@ contract WithDestinationFunctionality is BridgeBase {
     }
 
     function __WithDestinationFunctionalityInitUnchained(
-        uint256 _fixedCryptoFee,
-        address[] memory _routers,
-        uint256[] memory _blockchainIDs
+        uint256[] memory _blockchainIDs,
+        uint256[] memory _blockchainToGasFee,
+        uint256[] memory _blockchainToRubicPlatformFee
     ) internal onlyInitializing {
-        require(_gasFees.length == _RubicPlatformFees.length, 'WDF: fees length mismatch');
+        require(_blockchainToGasFee.length == _blockchainToRubicPlatformFee.length, 'WDF: fees length mismatch');
 
-        for (uint256 i; i < _gasFees.length; i++) {
-            blockchainToGasFee[_blockchainIDs[i]] = _gasFees[i];
-            blockchainToRubicPlatformFee[_blockchainIDs[i]] = _RubicPlatformFees[i];
+        for (uint256 i; i < _blockchainToGasFee.length; i++) {
+            blockchainToGasFee[_blockchainIDs[i]] = _blockchainToGasFee[i];
+            blockchainToRubicPlatformFee[_blockchainIDs[i]] = _blockchainToRubicPlatformFee[i];
         }
     }
 
@@ -46,7 +46,7 @@ contract WithDestinationFunctionality is BridgeBase {
         address _integrator,
         uint256 _amountWithFee,
         uint256 initBlockchainNum
-    ) internal override returns (uint256 _totalFee, uint256 _RubicFee) {
+    ) internal override virtual view returns (uint256 _totalFee, uint256 _RubicFee) {
         if (_integrator != address(0)) {
             (_totalFee, _RubicFee) = _calculateFeeWithIntegrator(_amountWithFee, _integrator);
         } else {

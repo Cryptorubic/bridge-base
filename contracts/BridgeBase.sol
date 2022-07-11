@@ -93,7 +93,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         address _integrator,
         uint256 _amountWithFee,
         uint256 _initBlockchainNum
-    ) internal virtual returns (uint256 _totalFee, uint256 _RubicFee) {}
+    ) internal virtual view returns (uint256 _totalFee, uint256 _RubicFee) {}
 
     function accrueFixedCryptoFee() internal returns (uint256 _amountWithoutCryptoFee) {
         uint256 _cryptoFee = fixedCryptoFee;
@@ -105,7 +105,6 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
     /// CONTROL FUNCTIONS ///
 
     function pauseExecution() external onlyManagerAndAdmin {
-        // TODO: add blockchain pause
         _pause();
     }
 

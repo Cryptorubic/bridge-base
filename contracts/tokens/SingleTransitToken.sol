@@ -16,6 +16,7 @@ contract SingleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
     mapping(address => uint256) public availableIntegratorFee;
 
     function __SingleTransitTokenInitUnchained(
+        address[] memory _routers,
         address _transitToken,
         uint256 _minTokenAmount,
         uint256 _maxTokenAmount

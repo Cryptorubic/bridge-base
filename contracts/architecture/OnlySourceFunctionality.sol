@@ -10,14 +10,14 @@ contract OnlySourceFunctionality is BridgeBase {
     ) internal onlyInitializing {
         require(_RubicPlatformFee <= DENOMINATOR, 'OSF: Rubic Fee too high');
 
-        _RubicPlatformFee = RubicPlatformFee;
+        RubicPlatformFee = _RubicPlatformFee;
     }
 
     function _calculateFee(
         address _integrator,
         uint256 _amountWithFee,
         uint256
-    ) internal override returns (uint256 _totalFee, uint256 _RubicFee) {
+    ) internal override virtual view returns (uint256 _totalFee, uint256 _RubicFee) {
         if (_integrator != address(0)) {
             (_totalFee, _RubicFee) = _calculateFeeWithIntegrator(_amountWithFee, _integrator);
         } else {
