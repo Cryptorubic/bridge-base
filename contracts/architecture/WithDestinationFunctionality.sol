@@ -37,18 +37,20 @@ contract WithDestinationFunctionality is BridgeBase {
         }
     }
 
-    function accrueGasFee(uint256 _blockchainID) internal returns (uint256 _gasFee) {
-        _gasFee = blockchainToGasFee[_blockchainID];
+    function accrueFixedAndGasFees(address _integrator, IntegratorFeeInfo memory _info, uint256 _blockchainID) internal returns (uint256 _totalCryptoFee) {
+        _totalCryptoFee = accrueFixedCryptoFee(_integrator, _info);
+        uint256 _gasFee = blockchainToGasFee[_blockchainID];
+        _totalCryptoFee += _gasFee;
         collectedGasFee += _gasFee;
     }
 
     function _calculateFee(
-        address _integrator,
+        IntegratorFeeInfo memory _info,
         uint256 _amountWithFee,
         uint256 initBlockchainNum
     ) internal override virtual view returns (uint256 _totalFee, uint256 _RubicFee) {
-        if (_integrator != address(0)) {
-            (_totalFee, _RubicFee) = _calculateFeeWithIntegrator(_amountWithFee, _integrator);
+        if (_info.isIntegrator) {
+            (_totalFee, _RubicFee) = _calculateFeeWithIntegrator(_amountWithFee, _info);
         } else {
             _totalFee = FullMath.mulDiv(_amountWithFee, blockchainToRubicPlatformFee[initBlockchainNum], DENOMINATOR);
 

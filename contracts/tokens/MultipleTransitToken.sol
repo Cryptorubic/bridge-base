@@ -29,11 +29,12 @@ contract MultipleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
 
     function accrueTokenFees(
         address _integrator,
+        IntegratorFeeInfo memory _info,
         uint256 _amountWithFee,
         uint256 _initBlockchainNum,
         address _token
     ) internal returns (uint256) {
-        (uint256 _totalFees, uint256 _RubicFee) = _calculateFee(_integrator, _amountWithFee, _initBlockchainNum);
+        (uint256 _totalFees, uint256 _RubicFee) = _calculateFee(_info, _amountWithFee, _initBlockchainNum);
 
         if (_integrator != address(0)) {
             availableIntegratorFee[_token][_integrator] += _totalFees - _RubicFee;
