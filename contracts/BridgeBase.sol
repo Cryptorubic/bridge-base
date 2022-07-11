@@ -1,4 +1,4 @@
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.10;
 
 import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol';
@@ -8,6 +8,8 @@ import '@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeab
 
 import './libraries/ECDSAOffsetRecovery.sol';
 import './libraries/FullMath.sol';
+
+import './errors/Errors.sol';
 
 contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffsetRecovery {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
@@ -20,7 +22,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
     mapping(address => uint256) public integratorFee; // TODO: check whether integrator is valid
     mapping(address => uint256) public platformShare;
 
-    uint256 public fixedCryptoFee;
+    uint256 public fixedCryptoFee; // TODO struct with uint128
     uint256 public collectedCryptoFee;
 
     EnumerableSetUpgradeable.AddressSet internal availableRouters;
@@ -35,17 +37,23 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
     }
 
     modifier onlyAdmin() {
-        require(isAdmin(msg.sender), 'BridgeBase: not an admin');
+        if (isAdmin(msg.sender) == false) {
+            revert NotAnAdmin();
+        }
         _;
     }
 
     modifier onlyManagerAndAdmin() {
-        require(isManager(msg.sender) || isAdmin(msg.sender), 'BridgeBase: not a manager');
+        if (isAdmin(msg.sender) == false && isManager(msg.sender) == false) {
+            revert NotAManager();
+        }
         _;
     }
 
     modifier onlyEOA() {
-        require(msg.sender == tx.origin, 'BridgeBase: only EOA');
+        if (msg.sender != tx.origin) {
+            revert OnlyEOA();
+        }
         _;
     }
 
@@ -124,7 +132,9 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         uint256 _fee,
         uint256 _platformShare
     ) external onlyManagerAndAdmin {
-        require(_fee <= 1000000, 'BridgeBase: fee too high');
+        if (_fee > DENOMINATOR) {
+            revert FeeTooHigh();
+        }
 
         integratorFee[_integrator] = _fee;
         platformShare[_integrator] = _platformShare;
@@ -135,7 +145,9 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
     }
 
     function addAvailableRouter(address _router) external onlyManagerAndAdmin {
-        require(_router != address(0), 'BridgeBase: router = 0');
+        if (_router == address(0)) {
+            revert ZeroAddress();
+        }
         availableRouters.add(_router);
     }
 
@@ -184,7 +196,9 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
                 tokenIn.safeApprove(_to, type(uint256).max);
             } else {
                 try tokenIn.approve(_to, type(uint256).max) returns (bool res) {
-                    require(res == true, 'BridgeBase: approve failed');
+                    if (!res) {
+                        revert ApproveFailed();
+                    }
                 } catch {
                     tokenIn.safeApprove(_to, 0);
                     tokenIn.safeApprove(_to, type(uint256).max);
@@ -194,12 +208,13 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
     }
 
     /**
+     * @dev Plain fallback function
+     */
+    fallback() external {}
+
+    /**
      * @dev Plain fallback function to receive crypto
      */
     receive() external payable {}
 
-    /**
-     * @dev Plain fallback function
-     */
-    fallback() external {}
 }

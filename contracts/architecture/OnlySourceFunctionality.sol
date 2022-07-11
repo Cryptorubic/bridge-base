@@ -1,14 +1,23 @@
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.10;
 
 import '../BridgeBase.sol';
 
 contract OnlySourceFunctionality is BridgeBase {
     uint256 public RubicPlatformFee;
 
+    event RequestSent(BaseCrossChainParams parameters);
+
+    modifier EventEmitter(BaseCrossChainParams calldata _params) {
+        _;
+        emit RequestSent(_params);
+    }
+
     function __OnlySourceFunctionalityInitUnchained(
         uint256 _RubicPlatformFee
     ) internal onlyInitializing {
-        require(_RubicPlatformFee <= DENOMINATOR, 'OSF: Rubic Fee too high');
+        if (_RubicPlatformFee > DENOMINATOR) {
+            revert FeeTooHigh();
+        }
 
         RubicPlatformFee = _RubicPlatformFee;
     }

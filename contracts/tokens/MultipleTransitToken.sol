@@ -1,4 +1,4 @@
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.10;
 
 import '@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol';
@@ -20,8 +20,10 @@ contract MultipleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
         uint256[] memory _minTokenAmounts,
         uint256[] memory _maxTokenAmounts
     ) internal onlyInitializing {
-        for (uint256 i = 0; i < _tokens.length; i++) {
-            require(_minTokenAmounts[i] < _maxTokenAmounts[i], 'MTT: min >= max');
+        for (uint256 i; i < _tokens.length; i++) {
+            if (_minTokenAmounts[i] > _maxTokenAmounts[i]) {
+                revert MinMustBeLowerThanMax();
+            }
             minTokenAmount[_tokens[i]] = _minTokenAmounts[i];
             maxTokenAmount[_tokens[i]] = _maxTokenAmounts[i];
         }
@@ -44,30 +46,33 @@ contract MultipleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
     }
 
     function collectIntegratorFee(address _token) external nonReentrant {
-        uint256 amount = availableIntegratorFee[_token][msg.sender];
-        require(amount > 0, 'MTT: amount is zero');
+        uint256 _amount = availableIntegratorFee[_token][msg.sender];
+        if (_amount == 0) {
+            revert ZeroAmount();
+        }
 
         availableIntegratorFee[_token][msg.sender] = 0;
-
-        _sendToken(_token, amount, msg.sender);
+        _sendToken(_token, _amount, msg.sender);
     }
 
-    function collectIntegratorFee(address _token, address _integrator) external onlyManagerAndAdmin {
-        uint256 amount = availableIntegratorFee[_token][_integrator];
-        require(amount > 0, 'MTT: amount is zero');
+    function collectIntegratorFee(address _token, address _integrator) external onlyManagerAndAdmin { // TODO sum 2 funcs
+        uint256 _amount = availableIntegratorFee[_token][_integrator];
+        if (_amount == 0) {
+            revert ZeroAmount();
+        }
 
         availableIntegratorFee[_token][_integrator] = 0;
-
-        _sendToken(_token, amount, _integrator);
+        _sendToken(_token, _amount, _integrator);
     }
 
     function collectRubicFee(address _token) external onlyManagerAndAdmin {
-        uint256 amount = availableRubicFee[_token];
-        require(amount > 0, 'MTT: amount is zero');
+        uint256 _amount = availableRubicFee[_token];
+        if (_amount == 0) {
+            revert ZeroAmount();
+        }
 
         availableRubicFee[_token] = 0;
-
-        _sendToken(_token, amount, msg.sender);
+        _sendToken(_token, _amount, msg.sender);
     }
 
     /**
@@ -76,6 +81,9 @@ contract MultipleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
      * @param _minTokenAmount Amount of tokens
      */
     function setMinTokenAmount(address _token, uint256 _minTokenAmount) external onlyManagerAndAdmin {
+        if (_minTokenAmount > maxTokenAmount[_token]) { // can be equal in case we want them to be zero
+            revert MinMustBeLowerThanMax();
+        }
         minTokenAmount[_token] = _minTokenAmount;
     }
 
@@ -85,6 +93,9 @@ contract MultipleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
      * @param _maxTokenAmount Amount of tokens
      */
     function setMaxTokenAmount(address _token, uint256 _maxTokenAmount) external onlyManagerAndAdmin {
+        if (_maxTokenAmount < maxTokenAmount[_token]) { // can be equal in case we want them to be zero
+            revert MaxMustBeBiggerThanMin();
+        }
         maxTokenAmount[_token] = _maxTokenAmount;
     }
 }
