@@ -29,6 +29,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         address srcInputToken;
         address dstOutputToken;
         address integrator;
+        address recipient;
         uint256 srcInputAmount;
         uint256 dstMinOutputAmount;
         uint256 dstChainID;
