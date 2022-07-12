@@ -44,22 +44,30 @@ contract MultipleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
         return _amountWithFee - _totalFees;
     }
 
-    function collectIntegratorFee(address _token) external nonReentrant {
-        uint256 amount = availableIntegratorFee[_token][msg.sender];
-        require(amount > 0, 'MTT: amount is zero');
+    function _collectIntegrator(address _token, address _integrator) private {
+        uint256 amount;
 
-        availableIntegratorFee[_token][msg.sender] = 0;
+        if (_token == address(0)) {
+            amount = integratorToCollectedCryptoFee[_integrator];
+            integratorToCollectedCryptoFee[_integrator] = 0;
+            emit FixedCryptoFeeCollected(amount, _integrator);
+        }
 
-        _sendToken(_token, amount, msg.sender);
-    }
+        amount += availableIntegratorFee[_token][_integrator];
 
-    function collectIntegratorFee(address _token, address _integrator) external onlyManagerAndAdmin {
-        uint256 amount = availableIntegratorFee[_token][_integrator];
         require(amount > 0, 'MTT: amount is zero');
 
         availableIntegratorFee[_token][_integrator] = 0;
 
         _sendToken(_token, amount, _integrator);
+    }
+
+    function collectIntegratorFee(address _token) external nonReentrant {
+        _collectIntegrator(_token, msg.sender);
+    }
+
+    function collectIntegratorFee(address _token, address _integrator) external onlyManagerAndAdmin {
+        _collectIntegrator(_token, _integrator);
     }
 
     function collectRubicFee(address _token) external onlyManagerAndAdmin {
