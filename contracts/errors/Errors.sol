@@ -5,6 +5,7 @@ error NotAManager();
 error NotARelayer();
 error OnlyEOA();
 error FeeTooHigh();
+error ShareTooHigh();
 error ZeroAddress();
 error ZeroAmount();
 error ApproveFailed();

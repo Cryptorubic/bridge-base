@@ -135,10 +135,10 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
             revert FeeTooHigh();
         }
         if (_info.RubicTokenShare > DENOMINATOR) {
-            revert FeeTooHigh();
+            revert ShareTooHigh();
         }
         if (_info.fixedCryptoShare > DENOMINATOR) {
-            revert FeeTooHigh();
+            revert ShareTooHigh();
         }
 
         integratorToFeeInfo[_integrator] = _info;
