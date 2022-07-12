@@ -52,7 +52,7 @@ contract MultipleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
         if (_token == address(0)) {
             _amount = integratorToCollectedCryptoFee[_integrator];
             integratorToCollectedCryptoFee[_integrator] = 0;
-            emit FixedCryptoFeeCollected(amount, _integrator);
+            emit FixedCryptoFeeCollected(_amount, _integrator);
         }
 
         _amount += availableIntegratorFee[_token][_integrator];
