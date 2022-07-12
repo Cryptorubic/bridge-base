@@ -27,6 +27,9 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
 
     EnumerableSetUpgradeable.AddressSet internal availableRouters;
 
+    event FixedCryptoFee(uint256 RubicPart, uint256 integrtorPart, address integrator);
+    event FixedCryptoFeeCollected(uint256 amount, address collector);
+
     struct IntegratorFeeInfo {
         bool isIntegrator;
         uint32 tokenFee;
@@ -105,9 +108,12 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         _fixedCryptoFee = fixedCryptoFee;
 
         uint256 _integratorCryptoFee = (_fixedCryptoFee * _info.fixedCryptoShare) / DENOMINATOR;
+        uint256 _RubicPart = _fixedCryptoFee - _integratorCryptoFee;
 
-        collectedCryptoFee += _fixedCryptoFee - _integratorCryptoFee;
+        collectedCryptoFee += _RubicPart;
         integratorToCollectedCryptoFee[_integrator] += _integratorCryptoFee;
+
+        emit FixedCryptoFee(_RubicPart, _integratorCryptoFee, _integrator);
     }
 
     /// CONTROL FUNCTIONS ///
@@ -120,11 +126,13 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         _unpause();
     }
 
-    function collectCryptoFee(address payable _to) external onlyManagerAndAdmin {
+    function collectRubicCryptoFee(address payable _to) external onlyManagerAndAdmin {
         uint256 _cryptoFee = collectedCryptoFee;
         collectedCryptoFee = 0;
 
         _to.transfer(_cryptoFee);
+
+        emit FixedCryptoFeeCollected(_cryptoFee, address(0));
     }
 
     function setIntegratorInfo(

@@ -1,4 +1,4 @@
-pragma solidity ^0.8.10;
+pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol';
@@ -46,24 +46,32 @@ contract MultipleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
         return _amountWithFee - _totalFees;
     }
 
-    function collectIntegratorFee(address _token) external nonReentrant {
-        uint256 _amount = availableIntegratorFee[_token][msg.sender];
-        if (_amount == 0) {
-            revert ZeroAmount();
+    function _collectIntegrator(address _token, address _integrator) private {
+        uint256 _amount;
+
+        if (_token == address(0)) {
+            _amount = integratorToCollectedCryptoFee[_integrator];
+            integratorToCollectedCryptoFee[_integrator] = 0;
+            emit FixedCryptoFeeCollected(amount, _integrator);
         }
 
-        availableIntegratorFee[_token][msg.sender] = 0;
-        _sendToken(_token, _amount, msg.sender);
-    }
+        _amount += availableIntegratorFee[_token][_integrator];
 
-    function collectIntegratorFee(address _token, address _integrator) external onlyManagerAndAdmin { // TODO sum 2 funcs
-        uint256 _amount = availableIntegratorFee[_token][_integrator];
         if (_amount == 0) {
             revert ZeroAmount();
         }
 
         availableIntegratorFee[_token][_integrator] = 0;
+
         _sendToken(_token, _amount, _integrator);
+    }
+
+    function collectIntegratorFee(address _token) external nonReentrant {
+        _collectIntegrator(_token, msg.sender);
+    }
+
+    function collectIntegratorFee(address _token, address _integrator) external onlyManagerAndAdmin {
+        _collectIntegrator(_token, _integrator);
     }
 
     function collectRubicFee(address _token) external onlyManagerAndAdmin {
