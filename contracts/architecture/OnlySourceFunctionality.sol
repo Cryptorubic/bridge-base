@@ -23,12 +23,12 @@ contract OnlySourceFunctionality is BridgeBase {
     }
 
     function _calculateFee(
-        address _integrator,
+        IntegratorFeeInfo memory _info,
         uint256 _amountWithFee,
         uint256
     ) internal override virtual view returns (uint256 _totalFee, uint256 _RubicFee) {
-        if (_integrator != address(0)) {
-            (_totalFee, _RubicFee) = _calculateFeeWithIntegrator(_amountWithFee, _integrator);
+        if (_info.isIntegrator) {
+            (_totalFee, _RubicFee) = _calculateFeeWithIntegrator(_amountWithFee, _info);
         } else {
             _totalFee = FullMath.mulDiv(_amountWithFee, RubicPlatformFee, DENOMINATOR);
 

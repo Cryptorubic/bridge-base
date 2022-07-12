@@ -19,18 +19,26 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
 
     bytes32 public constant MANAGER_ROLE = keccak256('MANAGER_ROLE');
 
-    mapping(address => uint256) public integratorFee; // TODO: check whether integrator is valid
-    mapping(address => uint256) public platformShare;
+    mapping(address => IntegratorFeeInfo) public integratorToFeeInfo;
+    mapping(address => uint256) public integratorToCollectedCryptoFee; //TODO: collect
 
-    uint256 public fixedCryptoFee; // TODO struct with uint128
+    uint256 public fixedCryptoFee;
     uint256 public collectedCryptoFee;
 
     EnumerableSetUpgradeable.AddressSet internal availableRouters;
+
+    struct IntegratorFeeInfo {
+        bool isIntegrator;
+        uint32 tokenFee;
+        uint32 fixedCryptoShare;
+        uint32 RubicTokenShare;
+    }
 
     struct BaseCrossChainParams {
         address srcInputToken;
         address dstOutputToken;
         address integrator;
+        address recipient;
         uint256 srcInputAmount;
         uint256 dstMinOutputAmount;
         uint256 dstChainID;
@@ -81,33 +89,25 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         }
     }
 
-    function _calculateFeeWithIntegrator(uint256 _amountWithFee, address _integrator)
+    function _calculateFeeWithIntegrator(uint256 _amountWithFee, IntegratorFeeInfo memory _info)
         internal
-        view
+        pure
         returns (uint256 _totalFee, uint256 _RubicFee)
     {
-        uint256 integratorPercent = integratorFee[_integrator];
+        if (_info.tokenFee > 0) {
+            _totalFee = FullMath.mulDiv(_amountWithFee, _info.tokenFee, DENOMINATOR);
 
-        if (integratorPercent > 0) {
-            uint256 platformPercent = platformShare[_integrator];
-
-            _totalFee = FullMath.mulDiv(_amountWithFee, integratorPercent, DENOMINATOR);
-
-            _RubicFee = FullMath.mulDiv(_totalFee, platformPercent, DENOMINATOR);
+            _RubicFee = FullMath.mulDiv(_totalFee, _info.RubicTokenShare, DENOMINATOR);
         }
     }
 
-    function _calculateFee(
-        address _integrator,
-        uint256 _amountWithFee,
-        uint256 _initBlockchainNum
-    ) internal virtual view returns (uint256 _totalFee, uint256 _RubicFee) {}
+    function accrueFixedCryptoFee(address _integrator, IntegratorFeeInfo memory _info) internal virtual returns (uint256 _fixedCryptoFee) {
+        _fixedCryptoFee = fixedCryptoFee;
 
-    function accrueFixedCryptoFee() internal returns (uint256 _amountWithoutCryptoFee) {
-        uint256 _cryptoFee = fixedCryptoFee;
-        collectedCryptoFee += _cryptoFee;
+        uint256 _integratorCryptoFee = (_fixedCryptoFee * _info.fixedCryptoShare) / DENOMINATOR;
 
-        _amountWithoutCryptoFee = msg.value - _cryptoFee; // if _cryptoFee > msg.value it would revert (sol 0.8);
+        collectedCryptoFee += _fixedCryptoFee - _integratorCryptoFee;
+        integratorToCollectedCryptoFee[_integrator] += _integratorCryptoFee;
     }
 
     /// CONTROL FUNCTIONS ///
@@ -127,17 +127,21 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         _to.transfer(_cryptoFee);
     }
 
-    function setIntegratorFee(
+    function setIntegratorInfo(
         address _integrator,
-        uint256 _fee,
-        uint256 _platformShare
+        IntegratorFeeInfo calldata _info
     ) external onlyManagerAndAdmin {
-        if (_fee > DENOMINATOR) {
+        if (_info.tokenFee > DENOMINATOR) {
+            revert FeeTooHigh();
+        }
+        if (_info.RubicTokenShare > DENOMINATOR) {
+            revert FeeTooHigh();
+        }
+        if (_info.fixedCryptoShare > DENOMINATOR) {
             revert FeeTooHigh();
         }
 
-        integratorFee[_integrator] = _fee;
-        platformShare[_integrator] = _platformShare;
+        integratorToFeeInfo[_integrator] = _info;
     }
 
     function setFixedCryptoFee(uint256 _fixedCryptoFee) external onlyManagerAndAdmin {
@@ -207,14 +211,19 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         }
     }
 
-    /**
-     * @dev Plain fallback function
-     */
-    fallback() external {}
+    function _calculateFee(
+        IntegratorFeeInfo memory _info,
+        uint256 _amountWithFee,
+        uint256 _initBlockchainNum
+    ) internal virtual view returns (uint256 _totalFee, uint256 _RubicFee) {}
 
     /**
      * @dev Plain fallback function to receive crypto
      */
     receive() external payable {}
 
+    /**
+     * @dev Plain fallback function
+     */
+    fallback() external {}
 }
