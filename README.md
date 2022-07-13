@@ -242,15 +242,27 @@ mapping(address => mapping(address => uint256)) public availableIntegratorFee;
 uint256 internal constant DENOMINATOR = 1e6;
 ```
 
-Комиссии интеграторов и часть команды Рубик можно установить только через external функцию:
+Комиссии интеграторов и часть комиссии рубика можно установить только через external функцию:
 
-```solidity
-function setIntegratorFee(
-     address _integrator,
-     uint256 _fee,
-     uint256 _platformShare
- ) external onlyManagerAndAdmin
+```solidity    
+function setIntegratorInfo(
+        address _integrator,
+        IntegratorFeeInfo calldata _info
+    ) external onlyManagerAndAdmin {
 ```
+Где `info` это:
+```solidity
+    struct IntegratorFeeInfo {
+        bool isIntegrator;
+        uint32 tokenFee;
+        uint32 fixedCryptoShare;
+        uint32 RubicTokenShare;
+    }
+```
+`bool isIntegrator` - флаг, будет ли интегратор получать комиссии.
+`uint32 tokenFee` - процент платформ фи, который будет сниматься с пользователя.
+`uint32 fixedCryptoShare` - процент от фикс комиссии, который пойдет интегратору. Т.е. если 60%, то 40% пойдет в комиссию рубика.
+`uint32 RubicTokenShare` - процент от платформ фи, который пойдет нам. Т.е. если 60%, то 40% пойдет в комиссию интегратора.
 
 В то время как комиссии Рубика (которые снимаются при отсутствии интегратора) возможно установить
 как при инициализации:
