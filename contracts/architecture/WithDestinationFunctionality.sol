@@ -1,4 +1,4 @@
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.10;
 
 import '../BridgeBase.sol';
 
@@ -20,7 +20,9 @@ contract WithDestinationFunctionality is BridgeBase {
     bytes32 public constant RELAYER_ROLE = keccak256('RELAYER_ROLE');
 
     modifier onlyRelayer() {
-        require(isRelayer(msg.sender), 'WDF: not a relayer');
+        if (!hasRole(RELAYER_ROLE, msg.sender)) {
+            revert NotARelayer();
+        }
         _;
     }
 
@@ -29,7 +31,9 @@ contract WithDestinationFunctionality is BridgeBase {
         uint256[] memory _blockchainToGasFee,
         uint256[] memory _blockchainToRubicPlatformFee
     ) internal onlyInitializing {
-        require(_blockchainToGasFee.length == _blockchainToRubicPlatformFee.length, 'WDF: fees length mismatch');
+        if(_blockchainToGasFee.length != _blockchainToRubicPlatformFee.length) {
+            revert LengthMismatch();
+        }
 
         for (uint256 i; i < _blockchainToGasFee.length; i++) {
             blockchainToGasFee[_blockchainIDs[i]] = _blockchainToGasFee[i];
@@ -37,18 +41,20 @@ contract WithDestinationFunctionality is BridgeBase {
         }
     }
 
-    function accrueGasFee(uint256 _blockchainID) internal returns (uint256 _gasFee) {
-        _gasFee = blockchainToGasFee[_blockchainID];
+    function accrueFixedAndGasFees(address _integrator, IntegratorFeeInfo memory _info, uint256 _blockchainID) internal returns (uint256 _totalCryptoFee) {
+        _totalCryptoFee = accrueFixedCryptoFee(_integrator, _info);
+        uint256 _gasFee = blockchainToGasFee[_blockchainID];
+        _totalCryptoFee += _gasFee;
         collectedGasFee += _gasFee;
     }
 
     function _calculateFee(
-        address _integrator,
+        IntegratorFeeInfo memory _info,
         uint256 _amountWithFee,
         uint256 initBlockchainNum
     ) internal override virtual view returns (uint256 _totalFee, uint256 _RubicFee) {
-        if (_integrator != address(0)) {
-            (_totalFee, _RubicFee) = _calculateFeeWithIntegrator(_amountWithFee, _integrator);
+        if (_info.isIntegrator) {
+            (_totalFee, _RubicFee) = _calculateFeeWithIntegrator(_amountWithFee, _info);
         } else {
             _totalFee = FullMath.mulDiv(_amountWithFee, blockchainToRubicPlatformFee[initBlockchainNum], DENOMINATOR);
 
@@ -96,11 +102,12 @@ contract WithDestinationFunctionality is BridgeBase {
      * @param _statusCode Associated status
      */
     function changeTxStatus(bytes32 _id, SwapStatus _statusCode) external onlyRelayer {
-        require(_statusCode != SwapStatus.Null, 'WDF: cant set to Null');
-        require(
-            processedTransactions[_id] != SwapStatus.Succeeded && processedTransactions[_id] != SwapStatus.Fallback,
-            'WDF: unchangeable'
-        );
+        if (_statusCode == SwapStatus.Null) {
+            revert CantSetToNull();
+        }
+        if (processedTransactions[_id] == SwapStatus.Succeeded || processedTransactions[_id] == SwapStatus.Fallback) {
+            revert Unchangeable();
+        }
 
         processedTransactions[_id] = _statusCode;
     }

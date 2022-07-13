@@ -20,8 +20,10 @@ contract MultipleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
         uint256[] memory _minTokenAmounts,
         uint256[] memory _maxTokenAmounts
     ) internal onlyInitializing {
-        for (uint256 i = 0; i < _tokens.length; i++) {
-            require(_minTokenAmounts[i] < _maxTokenAmounts[i], 'MTT: min >= max');
+        for (uint256 i; i < _tokens.length; i++) {
+            if (_minTokenAmounts[i] > _maxTokenAmounts[i]) {
+                revert MinMustBeLowerThanMax();
+            }
             minTokenAmount[_tokens[i]] = _minTokenAmounts[i];
             maxTokenAmount[_tokens[i]] = _maxTokenAmounts[i];
         }
@@ -29,11 +31,12 @@ contract MultipleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
 
     function accrueTokenFees(
         address _integrator,
+        IntegratorFeeInfo memory _info,
         uint256 _amountWithFee,
         uint256 _initBlockchainNum,
         address _token
     ) internal returns (uint256) {
-        (uint256 _totalFees, uint256 _RubicFee) = _calculateFee(_integrator, _amountWithFee, _initBlockchainNum);
+        (uint256 _totalFees, uint256 _RubicFee) = _calculateFee(_info, _amountWithFee, _initBlockchainNum);
 
         if (_integrator != address(0)) {
             availableIntegratorFee[_token][_integrator] += _totalFees - _RubicFee;
@@ -43,31 +46,42 @@ contract MultipleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
         return _amountWithFee - _totalFees;
     }
 
-    function collectIntegratorFee(address _token) external nonReentrant {
-        uint256 amount = availableIntegratorFee[_token][msg.sender];
-        require(amount > 0, 'MTT: amount is zero');
+    function _collectIntegrator(address _token, address _integrator) private {
+        uint256 _amount;
 
-        availableIntegratorFee[_token][msg.sender] = 0;
+        if (_token == address(0)) {
+            _amount = integratorToCollectedCryptoFee[_integrator];
+            integratorToCollectedCryptoFee[_integrator] = 0;
+            emit FixedCryptoFeeCollected(_amount, _integrator);
+        }
 
-        _sendToken(_token, amount, msg.sender);
-    }
+        _amount += availableIntegratorFee[_token][_integrator];
 
-    function collectIntegratorFee(address _token, address _integrator) external onlyManagerAndAdmin {
-        uint256 amount = availableIntegratorFee[_token][_integrator];
-        require(amount > 0, 'MTT: amount is zero');
+        if (_amount == 0) {
+            revert ZeroAmount();
+        }
 
         availableIntegratorFee[_token][_integrator] = 0;
 
-        _sendToken(_token, amount, _integrator);
+        _sendToken(_token, _amount, _integrator);
+    }
+
+    function collectIntegratorFee(address _token) external nonReentrant {
+        _collectIntegrator(_token, msg.sender);
+    }
+
+    function collectIntegratorFee(address _token, address _integrator) external onlyManagerAndAdmin {
+        _collectIntegrator(_token, _integrator);
     }
 
     function collectRubicFee(address _token) external onlyManagerAndAdmin {
-        uint256 amount = availableRubicFee[_token];
-        require(amount > 0, 'MTT: amount is zero');
+        uint256 _amount = availableRubicFee[_token];
+        if (_amount == 0) {
+            revert ZeroAmount();
+        }
 
         availableRubicFee[_token] = 0;
-
-        _sendToken(_token, amount, msg.sender);
+        _sendToken(_token, _amount, msg.sender);
     }
 
     /**
@@ -76,6 +90,9 @@ contract MultipleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
      * @param _minTokenAmount Amount of tokens
      */
     function setMinTokenAmount(address _token, uint256 _minTokenAmount) external onlyManagerAndAdmin {
+        if (_minTokenAmount > maxTokenAmount[_token]) { // can be equal in case we want them to be zero
+            revert MinMustBeLowerThanMax();
+        }
         minTokenAmount[_token] = _minTokenAmount;
     }
 
@@ -85,6 +102,9 @@ contract MultipleTransitToken is BridgeBase, ReentrancyGuardUpgradeable {
      * @param _maxTokenAmount Amount of tokens
      */
     function setMaxTokenAmount(address _token, uint256 _maxTokenAmount) external onlyManagerAndAdmin {
+        if (_maxTokenAmount < maxTokenAmount[_token]) { // can be equal in case we want them to be zero
+            revert MaxMustBeBiggerThanMin();
+        }
         maxTokenAmount[_token] = _maxTokenAmount;
     }
 }
