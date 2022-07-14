@@ -5,37 +5,55 @@ import '@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol';
 
 import './libraries/ECDSAOffsetRecovery.sol';
 import './libraries/FullMath.sol';
 
 import './errors/Errors.sol';
 
-contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffsetRecovery {
+contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffsetRecovery, ReentrancyGuardUpgradeable {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
+    // Denominator for setting fees
     uint256 internal constant DENOMINATOR = 1e6;
 
     bytes32 public constant MANAGER_ROLE = keccak256('MANAGER_ROLE');
 
+    // Struct with all info about integrator fees
     mapping(address => IntegratorFeeInfo) public integratorToFeeInfo;
-    mapping(address => uint256) public integratorToCollectedCryptoFee; //TODO: collect
+    // Amount of collected fees in native token integrator -> native fees
+    mapping(address => uint256) public integratorToCollectedCryptoFee;
 
+    // token -> minAmount for swap
+    mapping(address => uint256) public minTokenAmount;
+    // token -> maxAmount for swap
+    mapping(address => uint256) public maxTokenAmount;
+
+    // token -> rubic collected fees
+    mapping(address => uint256) public availableRubicFee;
+    // token -> integrator collected fees
+    mapping(address => mapping(address => uint256)) public availableIntegratorFee;
+
+    // Rubic fixed fee for swap
     uint256 public fixedCryptoFee;
+    // Collected rubic fees in native token
     uint256 public collectedCryptoFee;
 
+    // AddressSet of whitelisted addresses
     EnumerableSetUpgradeable.AddressSet internal availableRouters;
 
     event FixedCryptoFee(uint256 RubicPart, uint256 integrtorPart, address integrator);
     event FixedCryptoFeeCollected(uint256 amount, address collector);
 
     struct IntegratorFeeInfo {
-        bool isIntegrator;
-        uint32 tokenFee;
-        uint32 fixedCryptoShare;
-        uint32 RubicTokenShare;
-    }
+        bool isIntegrator; // flag for setting 0 fees for integrator  - 1 byte
+        uint32 tokenFee; // total fee percent gathered from user      - 4 bytes
+        uint32 fixedCryptoShare; // native share of fixed commission  - 4 bytes
+        uint32 RubicTokenShare; // token share of platform commission - 4 bytes
+        // uint128 fixedFee                                           - 16 bytes
+    } //                                                        total - 29 bytes
 
     struct BaseCrossChainParams {
         address srcInputToken;
@@ -68,13 +86,31 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         _;
     }
 
-    function __BridgeBaseInit(uint256 _fixedCryptoFee, address[] memory _routers) internal onlyInitializing {
+    function __BridgeBaseInit(
+        uint256 _fixedCryptoFee,
+        address[] memory _routers,
+        address[] memory _tokens,
+        uint256[] memory _minTokenAmounts,
+        uint256[] memory _maxTokenAmounts
+    ) internal onlyInitializing {
         __Pausable_init_unchained();
 
         fixedCryptoFee = _fixedCryptoFee;
 
-        for (uint256 i; i < _routers.length; i++) {
+        uint256 routerLength = _routers.length;
+        for (uint256 i; i < routerLength;) {
             availableRouters.add(_routers[i]);
+            unchecked { ++i; }
+        }
+
+        uint256 tokensLength = _tokens.length;
+        for (uint256 i; i < tokensLength;) {
+            if (_minTokenAmounts[i] > _maxTokenAmounts[i]) {
+                revert MinMustBeLowerThanMax();
+            }
+            minTokenAmount[_tokens[i]] = _minTokenAmounts[i];
+            maxTokenAmount[_tokens[i]] = _maxTokenAmounts[i];
+            unchecked { ++i; }
         }
 
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -104,7 +140,12 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         }
     }
 
-    function accrueFixedCryptoFee(address _integrator, IntegratorFeeInfo memory _info) internal virtual returns (uint256 _fixedCryptoFee) {
+    // TODO custom fixed fee for integrator
+    function accrueFixedCryptoFee(address _integrator, IntegratorFeeInfo memory _info)
+        internal
+        virtual
+        returns (uint256 _fixedCryptoFee)
+    {
         _fixedCryptoFee = fixedCryptoFee;
 
         uint256 _integratorCryptoFee = (_fixedCryptoFee * _info.fixedCryptoShare) / DENOMINATOR;
@@ -114,6 +155,87 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         integratorToCollectedCryptoFee[_integrator] += _integratorCryptoFee;
 
         emit FixedCryptoFee(_RubicPart, _integratorCryptoFee, _integrator);
+    }
+
+    function accrueTokenFees(
+        address _integrator,
+        IntegratorFeeInfo memory _info,
+        uint256 _amountWithFee,
+        uint256 _initBlockchainNum,
+        address _token
+    ) internal returns (uint256) {
+        (uint256 _totalFees, uint256 _RubicFee) = _calculateFee(_info, _amountWithFee, _initBlockchainNum);
+
+        if (_integrator != address(0)) {
+            availableIntegratorFee[_token][_integrator] += _totalFees - _RubicFee;
+        }
+        availableRubicFee[_token] += _RubicFee;
+
+        return _amountWithFee - _totalFees;
+    }
+
+    function _collectIntegrator(address _token, address _integrator) private {
+        uint256 _amount;
+
+        if (_token == address(0)) {
+            _amount = integratorToCollectedCryptoFee[_integrator];
+            integratorToCollectedCryptoFee[_integrator] = 0;
+            emit FixedCryptoFeeCollected(_amount, _integrator);
+        }
+
+        _amount += availableIntegratorFee[_token][_integrator];
+
+        if (_amount == 0) {
+            revert ZeroAmount();
+        }
+
+        availableIntegratorFee[_token][_integrator] = 0;
+
+        _sendToken(_token, _amount, _integrator);
+    }
+
+    function collectIntegratorFee(address _token) external nonReentrant {
+        _collectIntegrator(_token, msg.sender);
+    }
+
+    function collectIntegratorFee(address _token, address _integrator) external onlyManagerAndAdmin {
+        _collectIntegrator(_token, _integrator);
+    }
+
+    function collectRubicFee(address _token) external onlyManagerAndAdmin {
+        uint256 _amount = availableRubicFee[_token];
+        if (_amount == 0) {
+            revert ZeroAmount();
+        }
+
+        availableRubicFee[_token] = 0;
+        _sendToken(_token, _amount, msg.sender);
+    }
+
+    /**
+     * @dev Changes requirement for minimal token amount on transfers
+     * @param _token The token address to setup
+     * @param _minTokenAmount Amount of tokens
+     */
+    function setMinTokenAmount(address _token, uint256 _minTokenAmount) external onlyManagerAndAdmin {
+        if (_minTokenAmount > maxTokenAmount[_token]) {
+            // can be equal in case we want them to be zero
+            revert MinMustBeLowerThanMax();
+        }
+        minTokenAmount[_token] = _minTokenAmount;
+    }
+
+    /**
+     * @dev Changes requirement for maximum token amount on transfers
+     * @param _token The token address to setup
+     * @param _maxTokenAmount Amount of tokens
+     */
+    function setMaxTokenAmount(address _token, uint256 _maxTokenAmount) external onlyManagerAndAdmin {
+        if (_maxTokenAmount < maxTokenAmount[_token]) {
+            // can be equal in case we want them to be zero
+            revert MaxMustBeBiggerThanMin();
+        }
+        maxTokenAmount[_token] = _maxTokenAmount;
     }
 
     /// CONTROL FUNCTIONS ///
@@ -135,10 +257,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         emit FixedCryptoFeeCollected(_cryptoFee, address(0));
     }
 
-    function setIntegratorInfo(
-        address _integrator,
-        IntegratorFeeInfo calldata _info
-    ) external onlyManagerAndAdmin {
+    function setIntegratorInfo(address _integrator, IntegratorFeeInfo calldata _info) external onlyManagerAndAdmin {
         if (_info.tokenFee > DENOMINATOR) {
             revert FeeTooHigh();
         }
@@ -223,7 +342,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         IntegratorFeeInfo memory _info,
         uint256 _amountWithFee,
         uint256 _initBlockchainNum
-    ) internal virtual view returns (uint256 _totalFee, uint256 _RubicFee) {}
+    ) internal view virtual returns (uint256 _totalFee, uint256 _RubicFee) {}
 
     /**
      * @dev Plain fallback function to receive crypto

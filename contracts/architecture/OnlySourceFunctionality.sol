@@ -12,9 +12,7 @@ contract OnlySourceFunctionality is BridgeBase {
         emit RequestSent(_params);
     }
 
-    function __OnlySourceFunctionalityInitUnchained(
-        uint256 _RubicPlatformFee
-    ) internal onlyInitializing {
+    function __OnlySourceFunctionalityInitUnchained(uint256 _RubicPlatformFee) internal onlyInitializing {
         if (_RubicPlatformFee > DENOMINATOR) {
             revert FeeTooHigh();
         }
@@ -26,7 +24,7 @@ contract OnlySourceFunctionality is BridgeBase {
         IntegratorFeeInfo memory _info,
         uint256 _amountWithFee,
         uint256
-    ) internal override virtual view returns (uint256 _totalFee, uint256 _RubicFee) {
+    ) internal view virtual override returns (uint256 _totalFee, uint256 _RubicFee) {
         if (_info.isIntegrator) {
             (_totalFee, _RubicFee) = _calculateFeeWithIntegrator(_amountWithFee, _info);
         } else {
