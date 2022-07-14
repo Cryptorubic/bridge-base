@@ -31,7 +31,7 @@ contract WithDestinationFunctionality is BridgeBase {
         uint256[] memory _blockchainToGasFee,
         uint256[] memory _blockchainToRubicPlatformFee
     ) internal onlyInitializing {
-        if(_blockchainToGasFee.length != _blockchainToRubicPlatformFee.length) {
+        if (_blockchainToGasFee.length != _blockchainToRubicPlatformFee.length) {
             revert LengthMismatch();
         }
 
@@ -41,7 +41,11 @@ contract WithDestinationFunctionality is BridgeBase {
         }
     }
 
-    function accrueFixedAndGasFees(address _integrator, IntegratorFeeInfo memory _info, uint256 _blockchainID) internal returns (uint256 _totalCryptoFee) {
+    function accrueFixedAndGasFees(
+        address _integrator,
+        IntegratorFeeInfo memory _info,
+        uint256 _blockchainID
+    ) internal returns (uint256 _totalCryptoFee) {
         _totalCryptoFee = accrueFixedCryptoFee(_integrator, _info);
         uint256 _gasFee = blockchainToGasFee[_blockchainID];
         _totalCryptoFee += _gasFee;
@@ -52,7 +56,7 @@ contract WithDestinationFunctionality is BridgeBase {
         IntegratorFeeInfo memory _info,
         uint256 _amountWithFee,
         uint256 initBlockchainNum
-    ) internal override virtual view returns (uint256 _totalFee, uint256 _RubicFee) {
+    ) internal view virtual override returns (uint256 _totalFee, uint256 _RubicFee) {
         if (_info.isIntegrator) {
             (_totalFee, _RubicFee) = _calculateFeeWithIntegrator(_amountWithFee, _info);
         } else {
