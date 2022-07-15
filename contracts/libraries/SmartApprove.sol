@@ -1,0 +1,29 @@
+pragma solidity ^0.8.0;
+
+import '@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol';
+
+library SmartApprove {
+    using SafeERC20Upgradeable for IERC20Upgradeable;
+
+    function smartApprove(
+        address _tokenIn,
+        uint256 _amount,
+        address _to
+    ) internal {
+        IERC20Upgradeable tokenIn = IERC20Upgradeable(_tokenIn);
+        uint256 _allowance = tokenIn.allowance(address(this), _to);
+        if (_allowance < _amount) {
+            if (_allowance == 0) {
+                tokenIn.safeApprove(_to, type(uint256).max);
+            } else {
+                try tokenIn.approve(_to, type(uint256).max) returns (bool res) {
+                    require(res == true, 'smartApprove: failed');
+                } catch {
+                    tokenIn.safeApprove(_to, 0);
+                    tokenIn.safeApprove(_to, type(uint256).max);
+                }
+            }
+        }
+    }
+}
