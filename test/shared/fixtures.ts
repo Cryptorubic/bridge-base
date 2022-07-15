@@ -1,7 +1,7 @@
-import { SingleTransitOnlySource, TestERC20 } from '../../typechain-types';
+import { TestOnlySource, TestDEX, TestERC20 } from '../../typechain-types';
 import { Fixture } from 'ethereum-waffle';
 import { ethers } from 'hardhat';
-import { RUBIC_PLATFORM_FEE } from './consts';
+import { RUBIC_PLATFORM_FEE, MIN_TOKEN_AMOUNT, MAX_TOKEN_AMOUNT, FIXED_CRYPTO_FEE } from './consts';
 
 // const envConfig = require('dotenv').config();
 // const {
@@ -10,38 +10,42 @@ import { RUBIC_PLATFORM_FEE } from './consts';
 //     LIFI
 // } = envConfig.parsed || {};
 
-type Bridge = SingleTransitOnlySource;
+type Bridge = TestOnlySource;
 
 interface BridgeFixture {
     bridge: Bridge;
     transitToken: TestERC20;
     swapToken: TestERC20;
+    DEX: TestDEX;
 }
 
 const bridgeFixture = async function (): Promise<{
     transitToken: TestERC20;
     swapToken: TestERC20;
+    DEX: TestDEX;
 }> {
     const tokenFactory = await ethers.getContractFactory('TestERC20');
     const transitToken = (await tokenFactory.deploy()) as TestERC20;
     const swapToken = (await tokenFactory.deploy()) as TestERC20;
 
-    return { transitToken, swapToken };
+    const DEXFactory = await ethers.getContractFactory('TestDEX');
+    const DEX = (await DEXFactory.deploy()) as TestDEX;
+
+    await transitToken.transfer(DEX.address, ethers.utils.parseEther('100'));
+    return { transitToken, swapToken, DEX };
 };
 
-export const singleTransitOnlySourceFixture: Fixture<BridgeFixture> =
-    async function (): Promise<BridgeFixture> {
-        const bridgeFactory = await ethers.getContractFactory('SingleTransitOnlySource');
-        const bridge = (await bridgeFactory.deploy(
-            0,
-            [],
-            [],
-            [],
-            [],
-            RUBIC_PLATFORM_FEE
-        )) as Bridge;
+export const onlySourceFixture: Fixture<BridgeFixture> = async function (): Promise<BridgeFixture> {
+    const { transitToken, swapToken, DEX } = await bridgeFixture();
+    const bridgeFactory = await ethers.getContractFactory('TestOnlySource');
+    const bridge = (await bridgeFactory.deploy(
+        FIXED_CRYPTO_FEE,
+        [DEX.address],
+        [transitToken.address, swapToken.address],
+        [MIN_TOKEN_AMOUNT, MIN_TOKEN_AMOUNT],
+        [MAX_TOKEN_AMOUNT, MAX_TOKEN_AMOUNT],
+        RUBIC_PLATFORM_FEE
+    )) as Bridge;
 
-        const { transitToken, swapToken } = await bridgeFixture();
-
-        return { bridge, transitToken, swapToken };
-    };
+    return { bridge, transitToken, swapToken, DEX };
+};

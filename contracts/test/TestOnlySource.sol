@@ -1,27 +1,27 @@
 pragma solidity ^0.8.0;
 
-import '../tokens/SingleTransitToken.sol';
 import '../architecture/OnlySourceFunctionality.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 import { ITestDEX } from './TestDEX.sol';
 
-contract SingleTransitOnlySource is SingleTransitToken, OnlySourceFunctionality {
+contract TestOnlySource is OnlySourceFunctionality {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
 
     constructor(
         uint256 _fixedCryptoFee,
         address[] memory _routers,
-        address _transitToken,
-        uint256 _minTokenAmount,
-        uint256 _maxTokenAmount,
+        address[] memory _tokens,
+        uint256[] memory _minTokenAmounts,
+        uint256[] memory _maxTokenAmounts,
         uint256 _RubicPlatformFee
     ) {
         initialize(
             _fixedCryptoFee,
             _routers,
-            _transitToken,
-            _minTokenAmount,
-            _maxTokenAmount,
+            _tokens,
+            _minTokenAmounts,
+            _maxTokenAmounts,
             _RubicPlatformFee
         );
     }
@@ -29,13 +29,18 @@ contract SingleTransitOnlySource is SingleTransitToken, OnlySourceFunctionality 
     function initialize(
         uint256 _fixedCryptoFee,
         address[] memory _routers,
-        address _transitToken,
-        uint256 _minTokenAmount,
-        uint256 _maxTokenAmount,
+        address[] memory _tokens,
+        uint256[] memory _minTokenAmounts,
+        uint256[] memory _maxTokenAmounts,
         uint256 _RubicPlatformFee
     ) private initializer {
-        __BridgeBaseInit(_fixedCryptoFee, _routers);
-        __SingleTransitTokenInitUnchained(_routers, _transitToken, _minTokenAmount, _maxTokenAmount);
+        __BridgeBaseInit(
+            _fixedCryptoFee,
+            _routers,
+            _tokens,
+            _minTokenAmounts,
+            _maxTokenAmounts
+        );
         __OnlySourceFunctionalityInitUnchained(_RubicPlatformFee);
     }
 
@@ -46,9 +51,11 @@ contract SingleTransitOnlySource is SingleTransitToken, OnlySourceFunctionality 
         require(availableRouters.contains(_router), 'TestBridge: no such router');
         IntegratorFeeInfo memory _info = integratorToFeeInfo[_params.integrator];
 
+        IERC20(_params.srcInputToken).transferFrom(msg.sender, address(this), _params.srcInputAmount);
+
         accrueFixedCryptoFee(_params.integrator, _info);
 
-        uint256 _amountIn = accrueTokenFees(_params.integrator, _info, _params.srcInputAmount, 0);
+        uint256 _amountIn = accrueTokenFees(_params.integrator, _info, _params.srcInputAmount, 0, _params.srcInputToken);
 
         smartApprove(_params.srcInputToken, _amountIn, _router);
 
@@ -59,15 +66,15 @@ contract SingleTransitOnlySource is SingleTransitToken, OnlySourceFunctionality 
         );
     }
 
-    function _calculateFee(
-        IntegratorFeeInfo memory _info,
-        uint256 _amountWithFee,
-        uint256 _initBlockchainNum
-    ) internal override(BridgeBase, OnlySourceFunctionality) view returns (uint256 _totalFee, uint256 _RubicFee) {
-        (_totalFee, _RubicFee) = OnlySourceFunctionality._calculateFee(
-            _info,
-            _amountWithFee,
-            _initBlockchainNum
-        );
-    }
+//    function _calculateFee(
+//        IntegratorFeeInfo memory _info,
+//        uint256 _amountWithFee,
+//        uint256 _initBlockchainNum
+//    ) internal override(BridgeBase, OnlySourceFunctionality) view returns (uint256 _totalFee, uint256 _RubicFee) {
+//        (_totalFee, _RubicFee) = OnlySourceFunctionality._calculateFee(
+//            _info,
+//            _amountWithFee,
+//            _initBlockchainNum
+//        );
+//    }
 }
