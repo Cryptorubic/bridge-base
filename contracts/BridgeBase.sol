@@ -278,7 +278,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
      * @param _integrator Address of the integrator
      * @param _info Struct with fee info
      */
-    function setIntegratorInfo(address _integrator, IntegratorFeeInfo calldata _info) external onlyManagerAndAdmin {
+    function setIntegratorInfo(address _integrator, IntegratorFeeInfo memory _info) external onlyManagerAndAdmin {
         if (_info.tokenFee > DENOMINATOR) {
             revert FeeTooHigh();
         }
