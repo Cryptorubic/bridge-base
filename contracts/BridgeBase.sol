@@ -69,16 +69,12 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
 
     // reference to https://github.com/OpenZeppelin/openzeppelin-contracts/pull/3347/
     modifier onlyAdmin() {
-        if (!isAdmin(msg.sender)) {
-            revert NotAnAdmin();
-        }
+        isAdmin();
         _;
     }
 
     modifier onlyManagerAndAdmin() {
-        if (!isAdmin(msg.sender) && !isManager(msg.sender)) {
-            revert NotAManager();
-        }
+        isManagerOrAdmin();
         _;
     }
 
@@ -314,19 +310,23 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
     }
 
     /**
-     * @dev Function to check if address is belongs to manager role
-     * @param _who Address to check
+     * @notice Used in modifiers
+     * @dev Function to check if address is belongs to manager or admin role
      */
-    function isManager(address _who) internal view virtual returns (bool) {
-        return (hasRole(MANAGER_ROLE, _who));
+    function isManagerOrAdmin() internal view {
+        if ((!hasRole(MANAGER_ROLE, msg.sender)) && !hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+            revert NotAManager();
+        }
     }
 
     /**
+     * @notice Used in modifiers
      * @dev Function to check if address is belongs to default admin role
-     * @param _who Address to check
      */
-    function isAdmin(address _who) internal view virtual returns (bool) {
-        return (hasRole(DEFAULT_ADMIN_ROLE, _who));
+    function isAdmin() internal view {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+            revert NotAnAdmin();
+        }
     }
 
     /// UTILS ///
