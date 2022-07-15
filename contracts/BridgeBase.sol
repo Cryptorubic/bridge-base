@@ -119,31 +119,37 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
+    /**
+     * @dev Calculates and accrues fixed crypto fee
+     * @param _integrator Integrator's address if there is one
+     * @param _info A struct with integrator fee info
+     * @return The msg.value without fixedCryptoFee
+     */
     function accrueFixedCryptoFee(address _integrator, IntegratorFeeInfo memory _info)
         internal
         virtual
-        returns (uint256 _fixedCryptoFee)
+        returns (uint256)
     {
+        uint256 _fixedCryptoFee;
+        uint256 _RubicPart;
         // reference to https://gist.github.com/grGred/9bab8b9bad0cd42fc23d4e31e7347144#-0-is-cheaper-than--0-sometimes
-        if (_info.fixedFeeAmount > 0) {
+        if (_info.fixedFeeAmount > 0 && _info.isIntegrator) {
             // '>' is cheaper than '!=' in if statements with optimizer enabled
             _fixedCryptoFee = uint256(_info.fixedFeeAmount);
+            _RubicPart = (_fixedCryptoFee * _info.RubicFixedCryptoShare) / DENOMINATOR;
+
+            integratorToCollectedCryptoFee[_integrator] += _fixedCryptoFee - _RubicPart;
+
+            emit FixedCryptoFee(_RubicPart, _fixedCryptoFee - _RubicPart, _integrator);
         } else {
             _fixedCryptoFee = fixedCryptoFee;
-        }
 
-        // made only for swaps with tokens since msg.value with native swaps will be bigger than fixed fee amount
-        if (msg.value < _fixedCryptoFee) {
-            revert InefficientFixedFee();
+            emit FixedCryptoFee(_fixedCryptoFee, 0, address(0));
         }
-
-        uint256 _integratorCryptoFee = (_fixedCryptoFee * _info.RubicFixedCryptoShare) / DENOMINATOR;
-        uint256 _RubicPart = _fixedCryptoFee - _integratorCryptoFee;
 
         collectedCryptoFee += _RubicPart;
-        integratorToCollectedCryptoFee[_integrator] += _integratorCryptoFee;
 
-        emit FixedCryptoFee(_RubicPart, _integratorCryptoFee, _integrator);
+        return (msg.value - _fixedCryptoFee);
     }
 
     function accrueTokenFees(
