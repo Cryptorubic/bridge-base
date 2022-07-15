@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.10;
 
 import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol';
@@ -52,28 +54,28 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         uint32 tokenFee; // total fee percent gathered from user      - 4 bytes
         uint32 fixedCryptoShare; // native share of fixed commission  - 4 bytes
         uint32 RubicTokenShare; // token share of platform commission - 4 bytes
-        // uint128 fixedFee                                           - 16 bytes
+        uint128 fixedFeeAmount; // custom fixed fee amount            - 16 bytes
     } //                                                        total - 29 bytes
 
     struct BaseCrossChainParams {
         address srcInputToken;
-        address dstOutputToken;
-        address integrator;
-        address recipient;
         uint256 srcInputAmount;
-        uint256 dstMinOutputAmount;
         uint256 dstChainID;
+        address dstOutputToken;
+        uint256 dstMinOutputAmount;
+        address recipient;
+        address integrator;
     }
 
     modifier onlyAdmin() {
-        if (isAdmin(msg.sender) == false) {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             revert NotAnAdmin();
         }
         _;
     }
 
     modifier onlyManagerAndAdmin() {
-        if (isAdmin(msg.sender) == false && isManager(msg.sender) == false) {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender) && !hasRole(MANAGER_ROLE, msg.sender)) {
             revert NotAManager();
         }
         _;
@@ -98,13 +100,13 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         fixedCryptoFee = _fixedCryptoFee;
 
         uint256 routerLength = _routers.length;
-        for (uint256 i; i < routerLength;) {
+        for (uint256 i; i < routerLength; ) {
             availableRouters.add(_routers[i]);
             unchecked { ++i; }
         }
 
         uint256 tokensLength = _tokens.length;
-        for (uint256 i; i < tokensLength;) {
+        for (uint256 i; i < tokensLength; ) {
             if (_minTokenAmounts[i] > _maxTokenAmounts[i]) {
                 revert MinMustBeLowerThanMax();
             }
@@ -116,37 +118,16 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-    function _sendToken(
-        address _token,
-        uint256 _amount,
-        address _receiver
-    ) internal virtual {
-        if (_token == address(0)) {
-            AddressUpgradeable.sendValue(payable(_receiver), _amount);
-        } else {
-            IERC20Upgradeable(_token).safeTransfer(_receiver, _amount);
-        }
-    }
-
-    function _calculateFeeWithIntegrator(uint256 _amountWithFee, IntegratorFeeInfo memory _info)
-        internal
-        pure
-        returns (uint256 _totalFee, uint256 _RubicFee)
-    {
-        if (_info.tokenFee > 0) {
-            _totalFee = FullMath.mulDiv(_amountWithFee, _info.tokenFee, DENOMINATOR);
-
-            _RubicFee = FullMath.mulDiv(_totalFee, _info.RubicTokenShare, DENOMINATOR);
-        }
-    }
-
-    // TODO custom fixed fee for integrator
     function accrueFixedCryptoFee(address _integrator, IntegratorFeeInfo memory _info)
         internal
         virtual
         returns (uint256 _fixedCryptoFee)
     {
-        _fixedCryptoFee = fixedCryptoFee;
+        if (_info.fixedFeeAmount > 0) { // '>' is cheaper than '!=' in if statements with optimizer enabled
+            _fixedCryptoFee = uint256(_info.fixedFeeAmount);
+        } else {
+            _fixedCryptoFee = fixedCryptoFee;
+        }
 
         uint256 _integratorCryptoFee = (_fixedCryptoFee * _info.fixedCryptoShare) / DENOMINATOR;
         uint256 _RubicPart = _fixedCryptoFee - _integratorCryptoFee;
@@ -174,7 +155,26 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         return _amountWithFee - _totalFees;
     }
 
-    function _collectIntegrator(address _token, address _integrator) private {
+    /**
+     * @dev Calculates fee amount for integrator and rubic, used in architecture
+     * @param _amountWithFee the users initial amount
+     * @param _info the struct with data about integrator
+     * @return _totalFee the amount of Rubic + integrator fee
+     * @return _RubicFee the amount of Rubic fee only
+     */
+    function _calculateFeeWithIntegrator(uint256 _amountWithFee, IntegratorFeeInfo memory _info)
+        internal
+        pure
+        returns (uint256 _totalFee, uint256 _RubicFee)
+    {
+        if (_info.tokenFee > 0) {
+            _totalFee = FullMath.mulDiv(_amountWithFee, _info.tokenFee, DENOMINATOR);
+
+            _RubicFee = FullMath.mulDiv(_totalFee, _info.RubicTokenShare, DENOMINATOR);
+        }
+    }
+
+    function _collectIntegrator(address _integrator, address _token) private {
         uint256 _amount;
 
         if (_token == address(0)) {
@@ -198,7 +198,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         _collectIntegrator(_token, msg.sender);
     }
 
-    function collectIntegratorFee(address _token, address _integrator) external onlyManagerAndAdmin {
+    function collectIntegratorFee(address _integrator, address _token) external onlyManagerAndAdmin {
         _collectIntegrator(_token, _integrator);
     }
 
@@ -210,6 +210,46 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
 
         availableRubicFee[_token] = 0;
         _sendToken(_token, _amount, msg.sender);
+    }
+
+    function collectRubicCryptoFee() external onlyManagerAndAdmin {
+        uint256 _cryptoFee = collectedCryptoFee;
+        collectedCryptoFee = 0;
+
+        _sendToken(address(0), _cryptoFee, msg.sender);
+
+        emit FixedCryptoFeeCollected(_cryptoFee, address(0));
+    }
+
+    /// CONTROL FUNCTIONS ///
+
+    function pauseExecution() external onlyManagerAndAdmin {
+        _pause();
+    }
+
+    function unpauseExecution() external onlyManagerAndAdmin {
+        _unpause();
+    }
+
+    function setIntegratorInfo(address _integrator, IntegratorFeeInfo memory _info) external onlyManagerAndAdmin {
+        if (_info.tokenFee > DENOMINATOR) {
+            revert FeeTooHigh();
+        }
+        if (_info.RubicTokenShare > DENOMINATOR) {
+            revert ShareTooHigh();
+        }
+        if (_info.fixedCryptoShare > DENOMINATOR) {
+            revert ShareTooHigh();
+        }
+        unchecked {
+            _info.fixedCryptoShare = uint32(DENOMINATOR) - _info.fixedCryptoShare;
+        }
+
+        integratorToFeeInfo[_integrator] = _info;
+    }
+
+    function setFixedCryptoFee(uint256 _fixedCryptoFee) external onlyManagerAndAdmin {
+        fixedCryptoFee = _fixedCryptoFee;
     }
 
     /**
@@ -236,43 +276,6 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
             revert MaxMustBeBiggerThanMin();
         }
         maxTokenAmount[_token] = _maxTokenAmount;
-    }
-
-    /// CONTROL FUNCTIONS ///
-
-    function pauseExecution() external onlyManagerAndAdmin {
-        _pause();
-    }
-
-    function unpauseExecution() external onlyManagerAndAdmin {
-        _unpause();
-    }
-
-    function collectRubicCryptoFee(address payable _to) external onlyManagerAndAdmin {
-        uint256 _cryptoFee = collectedCryptoFee;
-        collectedCryptoFee = 0;
-
-        _to.transfer(_cryptoFee);
-
-        emit FixedCryptoFeeCollected(_cryptoFee, address(0));
-    }
-
-    function setIntegratorInfo(address _integrator, IntegratorFeeInfo calldata _info) external onlyManagerAndAdmin {
-        if (_info.tokenFee > DENOMINATOR) {
-            revert FeeTooHigh();
-        }
-        if (_info.RubicTokenShare > DENOMINATOR) {
-            revert ShareTooHigh();
-        }
-        if (_info.fixedCryptoShare > DENOMINATOR) {
-            revert ShareTooHigh();
-        }
-
-        integratorToFeeInfo[_integrator] = _info;
-    }
-
-    function setFixedCryptoFee(uint256 _fixedCryptoFee) external onlyManagerAndAdmin {
-        fixedCryptoFee = _fixedCryptoFee;
     }
 
     function addAvailableRouter(address _router) external onlyManagerAndAdmin {
@@ -338,6 +341,18 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         }
     }
 
+    function _sendToken(
+        address _token,
+        uint256 _amount,
+        address _receiver
+    ) internal virtual {
+        if (_token == address(0)) {
+            AddressUpgradeable.sendValue(payable(_receiver), _amount);
+        } else {
+            IERC20Upgradeable(_token).safeTransfer(_receiver, _amount);
+        }
+    }
+
     function _calculateFee(
         IntegratorFeeInfo memory _info,
         uint256 _amountWithFee,
@@ -345,7 +360,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
     ) internal view virtual returns (uint256 _totalFee, uint256 _RubicFee) {}
 
     /**
-     * @dev Plain fallback function to receive crypto
+     * @dev Plain fallback function to receive native
      */
     receive() external payable {}
 

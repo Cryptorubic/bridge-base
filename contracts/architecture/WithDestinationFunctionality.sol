@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.10;
 
 import '../BridgeBase.sol';
@@ -94,8 +96,7 @@ contract WithDestinationFunctionality is BridgeBase {
     function collectGasFee(address payable _to) external onlyManagerAndAdmin {
         uint256 _gasFee = collectedGasFee;
         collectedGasFee = 0;
-
-        _to.transfer(_gasFee);
+        _sendTToken(address(0), _gasFee, msg.sender);
     }
 
     /// TX STATUSES MANAGEMENT ///
