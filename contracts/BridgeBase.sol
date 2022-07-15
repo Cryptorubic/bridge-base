@@ -50,12 +50,12 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
     event FixedCryptoFeeCollected(uint256 amount, address collector);
 
     struct IntegratorFeeInfo {
-        bool isIntegrator; // flag for setting 0 fees for integrator  - 1 byte
-        uint32 tokenFee; // total fee percent gathered from user      - 4 bytes
-        uint32 fixedCryptoShare; // native share of fixed commission  - 4 bytes
-        uint32 RubicTokenShare; // token share of platform commission - 4 bytes
-        uint128 fixedFeeAmount; // custom fixed fee amount            - 16 bytes
-    } //                                                        total - 29 bytes
+        bool isIntegrator; // flag for setting 0 fees for integrator      - 1 byte
+        uint32 tokenFee; // total fee percent gathered from user          - 4 bytes
+        uint32 RubicFixedCryptoShare; // native share of fixed commission - 4 bytes
+        uint32 RubicTokenShare; // token share of platform commission     - 4 bytes
+        uint128 fixedFeeAmount; // custom fixed fee amount                - 16 bytes
+    } //                                                            total - 29 bytes <= 32 bytes
 
     struct BaseCrossChainParams {
         address srcInputToken;
@@ -67,15 +67,16 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         address integrator;
     }
 
+    // reference to https://github.com/OpenZeppelin/openzeppelin-contracts/pull/3347/
     modifier onlyAdmin() {
-        if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+        if (!isAdmin(msg.sender)) {
             revert NotAnAdmin();
         }
         _;
     }
 
     modifier onlyManagerAndAdmin() {
-        if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender) && !hasRole(MANAGER_ROLE, msg.sender)) {
+        if (!isAdmin(msg.sender) && !isManager(msg.sender)) {
             revert NotAManager();
         }
         _;
@@ -129,7 +130,12 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
             _fixedCryptoFee = fixedCryptoFee;
         }
 
-        uint256 _integratorCryptoFee = (_fixedCryptoFee * _info.fixedCryptoShare) / DENOMINATOR;
+        // made only for swaps with tokens since msg.value with native swaps will be bigger than fixed fee amount
+        if (msg.value < _fixedCryptoFee) {
+            revert InefficientFixedFee();
+        }
+
+        uint256 _integratorCryptoFee = (_fixedCryptoFee * _info.RubicFixedCryptoShare) / DENOMINATOR;
         uint256 _RubicPart = _fixedCryptoFee - _integratorCryptoFee;
 
         collectedCryptoFee += _RubicPart;
@@ -238,11 +244,12 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         if (_info.RubicTokenShare > DENOMINATOR) {
             revert ShareTooHigh();
         }
-        if (_info.fixedCryptoShare > DENOMINATOR) {
+        if (_info.RubicFixedCryptoShare > DENOMINATOR) {
             revert ShareTooHigh();
         }
+        // underflow is not possible because of the if statement higher
         unchecked {
-            _info.fixedCryptoShare = uint32(DENOMINATOR) - _info.fixedCryptoShare;
+            _info.RubicFixedCryptoShare = uint32(DENOMINATOR) - _info.RubicFixedCryptoShare;
         }
 
         integratorToFeeInfo[_integrator] = _info;
@@ -304,7 +311,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
      * @dev Function to check if address is belongs to manager role
      * @param _who Address to check
      */
-    function isManager(address _who) public view returns (bool) {
+    function isManager(address _who) internal view virtual returns (bool) {
         return (hasRole(MANAGER_ROLE, _who));
     }
 
@@ -312,7 +319,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
      * @dev Function to check if address is belongs to default admin role
      * @param _who Address to check
      */
-    function isAdmin(address _who) public view returns (bool) {
+    function isAdmin(address _who) internal view virtual returns (bool) {
         return (hasRole(DEFAULT_ADMIN_ROLE, _who));
     }
 

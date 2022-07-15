@@ -10,6 +10,7 @@ error FeeTooHigh();
 error ShareTooHigh();
 error ZeroAddress();
 error ZeroAmount();
+error InefficientFixedFee();
 error ApproveFailed();
 error MinMustBeLowerThanMax();
 error MaxMustBeBiggerThanMin();
