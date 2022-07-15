@@ -96,7 +96,7 @@ contract WithDestinationFunctionality is BridgeBase {
     function collectGasFee(address payable _to) external onlyManagerAndAdmin {
         uint256 _gasFee = collectedGasFee;
         collectedGasFee = 0;
-        _sendTToken(address(0), _gasFee, msg.sender);
+        _sendToken(address(0), _gasFee, msg.sender);
     }
 
     /// TX STATUSES MANAGEMENT ///
