@@ -230,7 +230,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
 
         _sendToken(address(0), _cryptoFee, msg.sender);
 
-        emit FixedCryptoFeeCollected(_cryptoFee, address(0));
+        emit FixedCryptoFeeCollected(_cryptoFee, msg.sender);
     }
 
     /// CONTROL FUNCTIONS ///
