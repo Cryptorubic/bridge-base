@@ -103,7 +103,9 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         uint256 routerLength = _routers.length;
         for (uint256 i; i < routerLength; ) {
             availableRouters.add(_routers[i]);
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
 
         uint256 tokensLength = _tokens.length;
@@ -113,7 +115,9 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
             }
             minTokenAmount[_tokens[i]] = _minTokenAmounts[i];
             maxTokenAmount[_tokens[i]] = _maxTokenAmounts[i];
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
 
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -124,7 +128,9 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
         virtual
         returns (uint256 _fixedCryptoFee)
     {
-        if (_info.fixedFeeAmount > 0) { // '>' is cheaper than '!=' in if statements with optimizer enabled
+        // reference to https://gist.github.com/grGred/9bab8b9bad0cd42fc23d4e31e7347144#-0-is-cheaper-than--0-sometimes
+        if (_info.fixedFeeAmount > 0) {
+            // '>' is cheaper than '!=' in if statements with optimizer enabled
             _fixedCryptoFee = uint256(_info.fixedFeeAmount);
         } else {
             _fixedCryptoFee = fixedCryptoFee;
