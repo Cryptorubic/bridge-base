@@ -75,7 +75,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
         _;
     }
 
-    modifier onlyManagerAndAdmin() {
+    modifier onlyManagerOrAdmin() {
         checkIsManagerOrAdmin();
         _;
     }
@@ -237,7 +237,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
      * @param _integrator Address of the integrator
      * @param _token The token to collect fees in
      */
-    function collectIntegratorFee(address _integrator, address _token) external onlyManagerAndAdmin {
+    function collectIntegratorFee(address _integrator, address _token) external onlyManagerOrAdmin {
         _collectIntegrator(_token, _integrator);
     }
 
@@ -245,7 +245,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
      * @dev Calling this function managers can collect Rubic's token fee
      * @param _token The token to collect fees in
      */
-    function collectRubicFee(address _token) external onlyManagerAndAdmin {
+    function collectRubicFee(address _token) external onlyManagerOrAdmin {
         uint256 _amount = availableRubicFee[_token];
         if (_amount == 0) {
             revert ZeroAmount();
@@ -260,7 +260,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
     /**
      * @dev Calling this function managers can collect Rubic's fixed crypto fee
      */
-    function collectRubicCryptoFee() external onlyManagerAndAdmin {
+    function collectRubicCryptoFee() external onlyManagerOrAdmin {
         uint256 _cryptoFee = collectedCryptoFee;
         collectedCryptoFee = 0;
 
@@ -271,11 +271,11 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
 
     /// CONTROL FUNCTIONS ///
 
-    function pauseExecution() external onlyManagerAndAdmin {
+    function pauseExecution() external onlyManagerOrAdmin {
         _pause();
     }
 
-    function unpauseExecution() external onlyManagerAndAdmin {
+    function unpauseExecution() external onlyManagerOrAdmin {
         _unpause();
     }
 
@@ -284,7 +284,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
      * @param _integrator Address of the integrator
      * @param _info Struct with fee info
      */
-    function setIntegratorInfo(address _integrator, IntegratorFeeInfo memory _info) external onlyManagerAndAdmin {
+    function setIntegratorInfo(address _integrator, IntegratorFeeInfo memory _info) external onlyManagerOrAdmin {
         if (_info.tokenFee > DENOMINATOR) {
             revert FeeTooHigh();
         }
@@ -302,7 +302,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
      * @dev Sets fixed crypto fee
      * @param _fixedCryptoFee Fixed crypto fee
      */
-    function setFixedCryptoFee(uint256 _fixedCryptoFee) external onlyManagerAndAdmin {
+    function setFixedCryptoFee(uint256 _fixedCryptoFee) external onlyManagerOrAdmin {
         fixedCryptoFee = _fixedCryptoFee;
     }
 
@@ -311,7 +311,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
      * @param _token The token address to setup
      * @param _minTokenAmount Amount of tokens
      */
-    function setMinTokenAmount(address _token, uint256 _minTokenAmount) external onlyManagerAndAdmin {
+    function setMinTokenAmount(address _token, uint256 _minTokenAmount) external onlyManagerOrAdmin {
         if (_minTokenAmount > maxTokenAmount[_token]) {
             // can be equal in case we want them to be zero
             revert MinMustBeLowerThanMax();
@@ -324,7 +324,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
      * @param _token The token address to setup
      * @param _maxTokenAmount Amount of tokens
      */
-    function setMaxTokenAmount(address _token, uint256 _maxTokenAmount) external onlyManagerAndAdmin {
+    function setMaxTokenAmount(address _token, uint256 _maxTokenAmount) external onlyManagerOrAdmin {
         if (_maxTokenAmount < maxTokenAmount[_token]) {
             // can be equal in case we want them to be zero
             revert MaxMustBeBiggerThanMin();
@@ -336,7 +336,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
      * @dev Appends new available router
      * @param _router Router's address to add
      */
-    function addAvailableRouter(address _router) external onlyManagerAndAdmin {
+    function addAvailableRouter(address _router) external onlyManagerOrAdmin {
         if (_router == address(0)) {
             revert ZeroAddress();
         }
@@ -348,7 +348,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
      * @dev Removes existing available router
      * @param _router Router's address to remove
      */
-    function removeAvailableRouter(address _router) external onlyManagerAndAdmin {
+    function removeAvailableRouter(address _router) external onlyManagerOrAdmin {
         // Check that router exists is performed inside the library
         availableRouters.remove(_router);
     }

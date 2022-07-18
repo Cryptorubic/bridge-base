@@ -87,7 +87,7 @@ contract WithDestinationFunctionality is BridgeBase {
      */
     function setRubicPlatformFeeOfBlockchain(uint256 _blockchainID, uint256 _RubicPlatformFee)
         external
-        onlyManagerAndAdmin
+        onlyManagerOrAdmin
     {
         require(_RubicPlatformFee <= DENOMINATOR);
         blockchainToRubicPlatformFee[_blockchainID] = _RubicPlatformFee;
@@ -98,11 +98,11 @@ contract WithDestinationFunctionality is BridgeBase {
      * @param _blockchainID ID of the blockchain
      * @param _gasFee Fee amount of native token that must be sent in init call
      */
-    function setGasFeeOfBlockchain(uint256 _blockchainID, uint256 _gasFee) external onlyManagerAndAdmin {
+    function setGasFeeOfBlockchain(uint256 _blockchainID, uint256 _gasFee) external onlyManagerOrAdmin {
         blockchainToGasFee[_blockchainID] = _gasFee;
     }
 
-    function collectGasFee(address _to) external onlyManagerAndAdmin {
+    function collectGasFee(address _to) external onlyManagerOrAdmin {
         uint256 _gasFee = collectedGasFee;
         collectedGasFee = 0;
         sendToken(address(0), _gasFee, _to);
