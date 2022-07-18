@@ -51,8 +51,8 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
     struct IntegratorFeeInfo {
         bool isIntegrator; // flag for setting 0 fees for integrator      - 1 byte
         uint32 tokenFee; // total fee percent gathered from user          - 4 bytes
-        uint32 RubicFixedCryptoShare; // native share of fixed commission - 4 bytes
         uint32 RubicTokenShare; // token share of platform commission     - 4 bytes
+        uint32 RubicFixedCryptoShare; // native share of fixed commission - 4 bytes
         uint128 fixedFeeAmount; // custom fixed fee amount                - 16 bytes
     } //                                                            total - 29 bytes <= 32 bytes
 
