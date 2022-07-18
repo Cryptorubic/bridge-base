@@ -325,7 +325,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
      * @param _maxTokenAmount Amount of tokens
      */
     function setMaxTokenAmount(address _token, uint256 _maxTokenAmount) external onlyManagerOrAdmin {
-        if (_maxTokenAmount < maxTokenAmount[_token]) {
+        if (_maxTokenAmount < minTokenAmount[_token]) {
             // can be equal in case we want them to be zero
             revert MaxMustBeBiggerThanMin();
         }
