@@ -127,10 +127,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
      * @param _info A struct with integrator fee info
      * @return The msg.value without fixedCryptoFee
      */
-    function accrueFixedCryptoFee(address _integrator, IntegratorFeeInfo memory _info)
-        internal
-        returns (uint256)
-    {
+    function accrueFixedCryptoFee(address _integrator, IntegratorFeeInfo memory _info) internal returns (uint256) {
         uint256 _fixedCryptoFee;
         uint256 _RubicPart;
         // reference to https://gist.github.com/grGred/9bab8b9bad0cd42fc23d4e31e7347144#-0-is-cheaper-than--0-sometimes

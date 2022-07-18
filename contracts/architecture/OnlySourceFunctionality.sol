@@ -22,13 +22,7 @@ contract OnlySourceFunctionality is BridgeBase {
         uint256[] memory _maxTokenAmounts,
         uint256 _RubicPlatformFee
     ) internal onlyInitializing {
-        __BridgeBaseInit(
-            _fixedCryptoFee,
-            _routers,
-            _tokens,
-            _minTokenAmounts,
-            _maxTokenAmounts
-        );
+        __BridgeBaseInit(_fixedCryptoFee, _routers, _tokens, _minTokenAmounts, _maxTokenAmounts);
 
         if (_RubicPlatformFee > DENOMINATOR) {
             revert FeeTooHigh();
