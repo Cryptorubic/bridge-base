@@ -27,14 +27,18 @@ describe('TestOnlySource', () => {
             srcInputAmount = consts.DEFAULT_AMOUNT_IN,
             dstMinOutputAmount = consts.MIN_TOKEN_AMOUNT,
             dstChainID = 228,
-            router = DEX.address,
-            value
-        } = { value: BN }
+            router = DEX.address
+        } = {},
+        value?: BN
     ): Promise<ContractTransaction> {
         if (value === undefined) {
-            value = (await calcCryptoFees({ bridge })).totalCryptoFee;
+            value = (
+                await calcCryptoFees({
+                    bridge,
+                    integrator: integrator === ethers.constants.AddressZero ? undefined : integrator
+                })
+            ).totalCryptoFee;
         }
-        const {} = calcCryptoFees({ bridge });
 
         return bridge.crossChainWithSwap(
             {
@@ -188,7 +192,7 @@ describe('TestOnlySource', () => {
         });
     });
 
-    describe.only('cross chain tests', () => {
+    describe('cross chain tests', () => {
         beforeEach('setup before swaps', async () => {
             bridge = bridge.connect(swapper);
 
@@ -253,13 +257,31 @@ describe('TestOnlySource', () => {
         it('check fixed crypto fee without integrator', async () => {
             await callBridge();
 
-            const { fixedCryptoFee } = await calcCryptoFees({
-                bridge
-            });
-
             expect(await waffle.provider.getBalance(bridge.address)).to.be.eq(
                 consts.FIXED_CRYPTO_FEE
             );
+        });
+        it('check fixed crypto fee with integrator', async () => {
+            await bridge.connect(owner).setIntegratorInfo(integratorWallet.address, {
+                isIntegrator: true,
+                tokenFee: '60000', // 6%
+                RubicFixedCryptoShare: '800000', // 80%
+                RubicTokenShare: '400000', // 40%,
+                fixedFeeAmount: consts.FIXED_CRYPTO_FEE.add(BN.from('228'))
+            });
+
+            const { totalCryptoFee, RubicFixedFee, integratorFixedFee } = await calcCryptoFees({
+                bridge,
+                integrator: integratorWallet.address
+            });
+
+            await callBridge({ integrator: integratorWallet.address });
+
+            expect(await waffle.provider.getBalance(bridge.address)).to.be.eq(totalCryptoFee);
+            expect(await bridge.integratorToCollectedCryptoFee(integratorWallet.address)).to.be.eq(
+                integratorFixedFee
+            );
+            expect(await bridge.collectedCryptoFee()).to.be.eq(RubicFixedFee);
         });
     });
 });

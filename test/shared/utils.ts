@@ -74,11 +74,17 @@ export async function calcCryptoFees({
     if (integrator !== undefined) {
         const feeInfo = await bridge.integratorToFeeInfo(integrator);
 
-        totalCryptoFee = feeInfo.fixedFeeAmount;
+        if (feeInfo.fixedFeeAmount.gt(BigNumber.from('0'))) {
+            totalCryptoFee = feeInfo.fixedFeeAmount;
 
-        fixedCryptoFee = totalCryptoFee;
-        RubicFixedFee = totalCryptoFee.mul(feeInfo.RubicFixedCryptoShare).div(DENOMINATOR);
-        integratorFixedFee = totalCryptoFee - RubicFixedFee;
+            fixedCryptoFee = totalCryptoFee;
+            RubicFixedFee = totalCryptoFee.mul(feeInfo.RubicFixedCryptoShare).div(DENOMINATOR);
+            integratorFixedFee = totalCryptoFee.sub(RubicFixedFee);
+        } else {
+            totalCryptoFee = await bridge.fixedCryptoFee();
+
+            RubicFixedFee = totalCryptoFee;
+        }
     } else {
         totalCryptoFee = await bridge.fixedCryptoFee();
 
