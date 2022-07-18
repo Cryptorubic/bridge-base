@@ -47,6 +47,9 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
 
     event FixedCryptoFee(uint256 RubicPart, uint256 integratorPart, address integrator);
     event FixedCryptoFeeCollected(uint256 amount, address collector);
+    event TokenFee(uint256 RubicPart, uint256 integratorPart, address integrator, address token);
+    event IntegratorTokenFeeCollected(uint256 amount, address integrator, address token);
+    event RubicTokenFeeCollected(uint256 amount, address token);
 
     struct IntegratorFeeInfo {
         bool isIntegrator; // flag for setting 0 fees for integrator      - 1 byte
@@ -175,6 +178,8 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
         }
         availableRubicFee[_token] += _RubicFee;
 
+        emit TokenFee(_RubicFee, _totalFees - _RubicFee, _integrator, _token);
+
         return _amountWithFee - _totalFees;
     }
 
@@ -217,6 +222,8 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
         availableIntegratorFee[_token][_integrator] = 0;
 
         _sendToken(_token, _amount, _integrator);
+
+        emit IntegratorTokenFeeCollected(_amount, _integrator, _token);
     }
 
     /**
@@ -249,6 +256,8 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
 
         availableRubicFee[_token] = 0;
         _sendToken(_token, _amount, msg.sender);
+
+        emit RubicTokenFeeCollected(_amount, _token);
     }
 
     /**
