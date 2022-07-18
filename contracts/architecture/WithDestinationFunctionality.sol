@@ -119,7 +119,10 @@ contract WithDestinationFunctionality is BridgeBase {
         if (_statusCode == SwapStatus.Null) {
             revert CantSetToNull();
         }
-        if (processedTransactions[_id] == SwapStatus.Succeeded || processedTransactions[_id] == SwapStatus.Fallback) {
+
+        SwapStatus _status = processedTransactions[_id];
+
+        if (_status == SwapStatus.Succeeded || _status == SwapStatus.Fallback) {
             revert Unchangeable();
         }
 
