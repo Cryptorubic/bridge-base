@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.10;
 
-contract ECDSAOffsetRecovery {
+abstract contract ECDSAOffsetRecovery {
     function getHashPacked(
         address user,
         uint256 amountWithFee,
