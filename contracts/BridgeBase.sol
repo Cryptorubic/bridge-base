@@ -221,7 +221,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
 
         availableIntegratorFee[_token][_integrator] = 0;
 
-        _sendToken(_token, _amount, _integrator);
+        sendToken(_token, _amount, _integrator);
 
         emit IntegratorTokenFeeCollected(_amount, _integrator, _token);
     }
@@ -255,7 +255,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
         }
 
         availableRubicFee[_token] = 0;
-        _sendToken(_token, _amount, msg.sender);
+        sendToken(_token, _amount, msg.sender);
 
         emit RubicTokenFeeCollected(_amount, _token);
     }
@@ -267,7 +267,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
         uint256 _cryptoFee = collectedCryptoFee;
         collectedCryptoFee = 0;
 
-        _sendToken(address(0), _cryptoFee, msg.sender);
+        sendToken(address(0), _cryptoFee, msg.sender);
 
         emit FixedCryptoFeeCollected(_cryptoFee, msg.sender);
     }

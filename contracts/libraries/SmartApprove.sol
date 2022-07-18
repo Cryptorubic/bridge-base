@@ -18,7 +18,7 @@ library SmartApprove {
                 tokenIn.safeApprove(_to, type(uint256).max);
             } else {
                 try tokenIn.approve(_to, type(uint256).max) returns (bool res) {
-                    require(res == true, 'smartApprove: failed');
+                    require(res, 'smartApprove: failed');
                 } catch {
                     tokenIn.safeApprove(_to, 0);
                     tokenIn.safeApprove(_to, type(uint256).max);
