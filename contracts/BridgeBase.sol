@@ -394,7 +394,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
         }
     }
 
-    function _sendToken(
+    function sendToken(
         address _token,
         uint256 _amount,
         address _receiver
