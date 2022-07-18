@@ -5,8 +5,7 @@ import { assert, expect } from 'chai';
 import { BigNumber as BN, ContractTransaction } from 'ethers';
 import * as consts from './shared/consts';
 import { onlySourceFixture } from './shared/fixtures';
-import { calcFees } from './shared/utils';
-import { FIXED_CRYPTO_FEE } from './shared/consts';
+import { calcCryptoFees, calcTokenFees } from './shared/utils';
 
 const createFixtureLoader = waffle.createFixtureLoader;
 
@@ -19,16 +18,24 @@ describe('TestOnlySource', () => {
 
     let loadFixture: ReturnType<typeof createFixtureLoader>;
 
-    async function callBridge({
-        srcInputToken = swapToken.address,
-        dstOutputToken = transitToken.address,
-        integrator = ethers.constants.AddressZero,
-        recipient = owner.address,
-        srcInputAmount = consts.DEFAULT_AMOUNT_IN,
-        dstMinOutputAmount = consts.MIN_TOKEN_AMOUNT,
-        dstChainID = 228,
-        router = DEX.address
-    } = {}): Promise<ContractTransaction> {
+    async function callBridge(
+        {
+            srcInputToken = swapToken.address,
+            dstOutputToken = transitToken.address,
+            integrator = ethers.constants.AddressZero,
+            recipient = owner.address,
+            srcInputAmount = consts.DEFAULT_AMOUNT_IN,
+            dstMinOutputAmount = consts.MIN_TOKEN_AMOUNT,
+            dstChainID = 228,
+            router = DEX.address,
+            value
+        } = { value: BN }
+    ): Promise<ContractTransaction> {
+        if (value === undefined) {
+            value = (await calcCryptoFees({ bridge })).totalCryptoFee;
+        }
+        const {} = calcCryptoFees({ bridge });
+
         return bridge.crossChainWithSwap(
             {
                 srcInputToken,
@@ -39,7 +46,8 @@ describe('TestOnlySource', () => {
                 dstMinOutputAmount,
                 dstChainID
             },
-            router
+            router,
+            { value: value }
         );
     }
 
@@ -86,8 +94,9 @@ describe('TestOnlySource', () => {
             const feeInfo = {
                 isIntegrator: true,
                 tokenFee: 0,
-                fixedCryptoShare: 0,
-                RubicTokenShare: 0
+                RubicFixedCryptoShare: 0,
+                RubicTokenShare: 0,
+                fixedFeeAmount: BN.from(0)
             };
 
             await expect(
@@ -98,17 +107,23 @@ describe('TestOnlySource', () => {
             const {
                 isIntegrator,
                 tokenFee,
-                fixedCryptoShare,
-                RubicTokenShare
+                RubicFixedCryptoShare,
+                RubicTokenShare,
+                fixedFeeAmount
             }: {
                 isIntegrator: boolean;
                 tokenFee: number;
-                fixedCryptoShare: number;
+                RubicFixedCryptoShare: number;
                 RubicTokenShare: number;
+                fixedFeeAmount: BN;
             } = await bridge.integratorToFeeInfo(integratorWallet.address);
-            expect({ isIntegrator, tokenFee, fixedCryptoShare, RubicTokenShare }).to.deep.eq(
-                feeInfo
-            );
+            expect({
+                isIntegrator,
+                tokenFee,
+                RubicFixedCryptoShare,
+                RubicTokenShare,
+                fixedFeeAmount
+            }).to.deep.eq(feeInfo);
         });
         it('only manager can set min token amounts', async () => {
             await expect(
@@ -187,7 +202,7 @@ describe('TestOnlySource', () => {
         });
         it('cross chain with swap amounts without integrator', async () => {
             await callBridge();
-            const { feeAmount, amountWithoutFee, RubicFee } = await calcFees({
+            const { feeAmount, amountWithoutFee, RubicFee } = await calcTokenFees({
                 bridge,
                 amountWithFee: consts.DEFAULT_AMOUNT_IN
             });
@@ -208,12 +223,13 @@ describe('TestOnlySource', () => {
             await bridge.connect(owner).setIntegratorInfo(integratorWallet.address, {
                 isIntegrator: true,
                 tokenFee: '60000', // 6%
-                fixedCryptoShare: '0',
-                RubicTokenShare: '400000' // 40%
+                RubicFixedCryptoShare: '0',
+                RubicTokenShare: '400000', // 40%,
+                fixedFeeAmount: BN.from(0)
             });
 
             await callBridge({ integrator: integratorWallet.address });
-            const { feeAmount, amountWithoutFee, integratorFee, RubicFee } = await calcFees({
+            const { feeAmount, amountWithoutFee, integratorFee, RubicFee } = await calcTokenFees({
                 bridge,
                 amountWithFee: consts.DEFAULT_AMOUNT_IN,
                 integrator: integratorWallet.address
@@ -236,6 +252,10 @@ describe('TestOnlySource', () => {
         });
         it('check fixed crypto fee without integrator', async () => {
             await callBridge();
+
+            const { fixedCryptoFee } = await calcCryptoFees({
+                bridge
+            });
 
             expect(await waffle.provider.getBalance(bridge.address)).to.be.eq(
                 consts.FIXED_CRYPTO_FEE

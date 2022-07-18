@@ -2,16 +2,16 @@ import { OnlySourceFunctionality, WithDestinationFunctionality } from '../../typ
 import { BigNumber, BigNumberish } from 'ethers';
 import { DENOMINATOR } from './consts';
 
-export async function calcFees({
+export async function calcTokenFees({
     bridge,
     amountWithFee,
     integrator,
-    initBlockchainNum
+    initChainID
 }: {
     bridge: OnlySourceFunctionality | WithDestinationFunctionality;
     amountWithFee: BigNumber;
     integrator?: string;
-    initBlockchainNum?: BigNumberish;
+    initChainID?: BigNumberish;
 }): Promise<{
     amountWithoutFee: BigNumber;
     feeAmount: BigNumber;
@@ -32,11 +32,11 @@ export async function calcFees({
         amountWithoutFee = amountWithFee.sub(feeAmount);
     } else {
         let fee;
-        if (initBlockchainNum === undefined) {
+        if (initChainID === undefined) {
             fee = await (<OnlySourceFunctionality>bridge).RubicPlatformFee();
         } else {
             fee = await (<WithDestinationFunctionality>bridge).blockchainToRubicPlatformFee(
-                initBlockchainNum
+                initChainID
             );
         }
 
@@ -48,4 +48,48 @@ export async function calcFees({
     //console.log(feeAmount, RubicFee, integratorFee, amountWithoutFee)
 
     return { feeAmount, RubicFee, integratorFee, amountWithoutFee };
+}
+
+export async function calcCryptoFees({
+    bridge,
+    integrator,
+    dstChainID
+}: {
+    bridge: OnlySourceFunctionality | WithDestinationFunctionality;
+    integrator?: string;
+    dstChainID?: BigNumberish;
+}): Promise<{
+    totalCryptoFee: BigNumber;
+    fixedCryptoFee: BigNumber;
+    RubicFixedFee: BigNumber;
+    integratorFixedFee: BigNumber;
+    gasFee: BigNumber;
+}> {
+    let totalCryptoFee;
+    let fixedCryptoFee;
+    let RubicFixedFee;
+    let integratorFixedFee;
+    let gasFee;
+
+    if (integrator !== undefined) {
+        const feeInfo = await bridge.integratorToFeeInfo(integrator);
+
+        totalCryptoFee = feeInfo.fixedFeeAmount;
+
+        fixedCryptoFee = totalCryptoFee;
+        RubicFixedFee = totalCryptoFee.mul(feeInfo.RubicFixedCryptoShare).div(DENOMINATOR);
+        integratorFixedFee = totalCryptoFee - RubicFixedFee;
+    } else {
+        totalCryptoFee = await bridge.fixedCryptoFee();
+
+        RubicFixedFee = totalCryptoFee;
+    }
+
+    if (dstChainID !== undefined) {
+        gasFee = await (<WithDestinationFunctionality>bridge).blockchainToGasFee(dstChainID);
+
+        totalCryptoFee += gasFee;
+    }
+
+    return { totalCryptoFee, fixedCryptoFee, RubicFixedFee, integratorFixedFee, gasFee };
 }

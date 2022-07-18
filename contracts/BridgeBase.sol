@@ -148,6 +148,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffse
 
         collectedCryptoFee += _RubicPart;
 
+        // Underflow is not possible
         return (msg.value - _fixedCryptoFee);
     }
 

@@ -1,6 +1,7 @@
 pragma solidity ^0.8.0;
 
 import '../architecture/OnlySourceFunctionality.sol';
+import '../libraries/SmartApprove.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 import { ITestDEX } from './TestDEX.sol';
@@ -57,7 +58,7 @@ contract TestOnlySource is OnlySourceFunctionality {
 
         uint256 _amountIn = accrueTokenFees(_params.integrator, _info, _params.srcInputAmount, 0, _params.srcInputToken);
 
-        smartApprove(_params.srcInputToken, _amountIn, _router);
+        SmartApprove.smartApprove(_params.srcInputToken, _amountIn, _router);
 
         ITestDEX(_router).swap(
             _params.srcInputToken,
