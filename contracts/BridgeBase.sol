@@ -379,7 +379,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
      * @dev Function to check if address is belongs to manager or admin role
      */
     function isManagerOrAdmin() internal view {
-        if ((!hasRole(MANAGER_ROLE, msg.sender)) && !hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+        if (!(hasRole(MANAGER_ROLE, msg.sender) || hasRole(DEFAULT_ADMIN_ROLE, msg.sender))) {
             revert NotAManager();
         }
     }
