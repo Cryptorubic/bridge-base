@@ -35,14 +35,14 @@ contract TestOnlySource is OnlySourceFunctionality {
         uint256[] memory _maxTokenAmounts,
         uint256 _RubicPlatformFee
     ) private initializer {
-        __BridgeBaseInit(
+        __OnlySourceFunctionalityInit(
             _fixedCryptoFee,
             _routers,
             _tokens,
             _minTokenAmounts,
-            _maxTokenAmounts
+            _maxTokenAmounts,
+            _RubicPlatformFee
         );
-        __OnlySourceFunctionalityInitUnchained(_RubicPlatformFee);
     }
 
     function crossChainWithSwap(
