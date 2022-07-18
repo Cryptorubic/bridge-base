@@ -147,6 +147,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
 
         collectedCryptoFee += _RubicPart;
 
+        // Underflow is not possible
         return (msg.value - _fixedCryptoFee);
     }
 
