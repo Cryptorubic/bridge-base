@@ -71,12 +71,12 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
 
     // reference to https://github.com/OpenZeppelin/openzeppelin-contracts/pull/3347/
     modifier onlyAdmin() {
-        isAdmin();
+        checkIsAdmin();
         _;
     }
 
     modifier onlyManagerAndAdmin() {
-        isManagerOrAdmin();
+        checkIsManagerOrAdmin();
         _;
     }
 
@@ -378,7 +378,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
      * @notice Used in modifiers
      * @dev Function to check if address is belongs to manager or admin role
      */
-    function isManagerOrAdmin() internal view {
+    function checkIsManagerOrAdmin() internal view {
         if (!(hasRole(MANAGER_ROLE, msg.sender) || hasRole(DEFAULT_ADMIN_ROLE, msg.sender))) {
             revert NotAManager();
         }
@@ -388,7 +388,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
      * @notice Used in modifiers
      * @dev Function to check if address is belongs to default admin role
      */
-    function isAdmin() internal view {
+    function checkIsAdmin() internal view {
         if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             revert NotAnAdmin();
         }

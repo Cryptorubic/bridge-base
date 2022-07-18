@@ -22,9 +22,7 @@ contract WithDestinationFunctionality is BridgeBase {
     bytes32 public constant RELAYER_ROLE = keccak256('RELAYER_ROLE');
 
     modifier onlyRelayer() {
-        if (!hasRole(RELAYER_ROLE, msg.sender)) {
-            revert NotARelayer();
-        }
+        checkIsRelayer();
         _;
     }
 
@@ -134,13 +132,12 @@ contract WithDestinationFunctionality is BridgeBase {
         processedTransactions[_id] = _statusCode;
     }
 
-    /// VIEW FUNCTIONS ///
-
     /**
      * @dev Function to check if address is belongs to relayer role
-     * @param _who Address to check
      */
-    function isRelayer(address _who) public view returns (bool) {
-        return hasRole(RELAYER_ROLE, _who);
+    function checkIsRelayer() internal view {
+        if (!hasRole(RELAYER_ROLE, msg.sender)) {
+            revert NotARelayer();
+        }
     }
 }
