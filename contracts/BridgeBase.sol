@@ -9,12 +9,11 @@ import '@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol';
 
-import './libraries/ECDSAOffsetRecovery.sol';
 import './libraries/FullMath.sol';
 
 import './errors/Errors.sol';
 
-contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ECDSAOffsetRecovery, ReentrancyGuardUpgradeable {
+contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, ReentrancyGuardUpgradeable {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
