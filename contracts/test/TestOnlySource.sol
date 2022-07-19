@@ -42,7 +42,7 @@ contract TestOnlySource is OnlySourceFunctionality {
         );
     }
 
-    function crossChainWithSwap1(BaseCrossChainParams calldata _params, address _router)
+    function crossChainWithSwap(BaseCrossChainParams calldata _params, address _router)
         external
         payable
         nonReentrant
