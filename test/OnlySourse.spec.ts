@@ -1,7 +1,7 @@
 import { ethers, waffle } from 'hardhat';
 import { Wallet } from '@ethersproject/wallet';
 import { TestOnlySource, TestERC20, TestDEX } from '../typechain-types';
-import { assert, expect } from 'chai';
+import { expect } from 'chai';
 import { BigNumber as BN, ContractTransaction } from 'ethers';
 import * as consts from './shared/consts';
 import { onlySourceFixture } from './shared/fixtures';
@@ -189,6 +189,43 @@ describe('TestOnlySource', () => {
             await bridge.addAvailableRouter(owner.address);
 
             expect(await bridge.getAvailableRouters()).to.be.deep.eq([DEX.address, owner.address]);
+        });
+        it('validation of integratorFeeInfo', async () => {
+            let feeInfo = {
+                isIntegrator: true,
+                tokenFee: consts.DENOMINATOR.add('1'),
+                RubicFixedCryptoShare: BN.from(0),
+                RubicTokenShare: BN.from(0),
+                fixedFeeAmount: BN.from(0)
+            };
+
+            await expect(
+                bridge.setIntegratorInfo(integratorWallet.address, feeInfo)
+            ).to.be.revertedWith('FeeTooHigh()');
+
+            feeInfo = {
+                isIntegrator: true,
+                tokenFee: consts.DENOMINATOR,
+                RubicFixedCryptoShare: consts.DENOMINATOR.add('1'),
+                RubicTokenShare: consts.DENOMINATOR,
+                fixedFeeAmount: BN.from(0)
+            };
+
+            await expect(
+                bridge.setIntegratorInfo(integratorWallet.address, feeInfo)
+            ).to.be.revertedWith('ShareTooHigh()');
+
+            feeInfo = {
+                isIntegrator: true,
+                tokenFee: consts.DENOMINATOR,
+                RubicFixedCryptoShare: consts.DENOMINATOR,
+                RubicTokenShare: consts.DENOMINATOR.add('1'),
+                fixedFeeAmount: BN.from(0)
+            };
+
+            await expect(
+                bridge.setIntegratorInfo(integratorWallet.address, feeInfo)
+            ).to.be.revertedWith('ShareTooHigh()');
         });
     });
 

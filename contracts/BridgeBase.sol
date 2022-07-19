@@ -288,10 +288,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
         if (_info.tokenFee > DENOMINATOR) {
             revert FeeTooHigh();
         }
-        if (_info.RubicTokenShare > DENOMINATOR) {
-            revert ShareTooHigh();
-        }
-        if (_info.RubicFixedCryptoShare > DENOMINATOR) {
+        if (_info.RubicTokenShare > DENOMINATOR || _info.RubicFixedCryptoShare > DENOMINATOR) {
             revert ShareTooHigh();
         }
 
