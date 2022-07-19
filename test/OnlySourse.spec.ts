@@ -238,7 +238,7 @@ describe('TestOnlySource', () => {
         });
         it('cross chain with swap fails if router not available', async () => {
             await expect(callBridge({ router: owner.address })).to.be.revertedWith(
-                'NotInWhitelist("' + owner.address + '")'
+                `NotInWhitelist("${owner.address}")`
             );
         });
         it('cross chain with swap amounts without integrator', async () => {
