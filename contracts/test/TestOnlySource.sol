@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.4;
 
 import '../architecture/OnlySourceFunctionality.sol';
@@ -40,12 +42,12 @@ contract TestOnlySource is OnlySourceFunctionality {
         );
     }
 
-    function crossChainWithSwap(BaseCrossChainParams calldata _params, address _router)
+    function crossChainWithSwap1(BaseCrossChainParams calldata _params, address _router)
         external
         payable
         nonReentrant
         whenNotPaused
-        EventEmitter(_params)
+        eventEmitter(_params)
     {
         if (!availableRouters.contains(_router)) {
             revert NotInWhitelist(_router);

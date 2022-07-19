@@ -25,6 +25,7 @@ contract WithDestinationFunctionality is BridgeBase {
         checkIsRelayer();
         _;
     }
+    // TODO add event Emitter
 
     function __WithDestinationFunctionalityInit(
         uint256 _fixedCryptoFee,

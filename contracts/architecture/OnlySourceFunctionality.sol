@@ -9,7 +9,7 @@ contract OnlySourceFunctionality is BridgeBase {
 
     event RequestSent(BaseCrossChainParams parameters);
 
-    modifier EventEmitter(BaseCrossChainParams calldata _params) {
+    modifier eventEmitter(BaseCrossChainParams calldata _params) {
         _;
         emit RequestSent(_params);
     }
