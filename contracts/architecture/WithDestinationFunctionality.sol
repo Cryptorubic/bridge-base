@@ -53,14 +53,23 @@ contract WithDestinationFunctionality is BridgeBase {
         }
     }
 
+    /**
+     * @dev Calculates and accrues gas fee and fixed crypto fee
+     * @param _integrator Integrator's address if there is one
+     * @param _info A struct with integrator fee info
+     * @param _blockchainID ID of the target blockchain
+     * @return _amountWithoutCryptoFee The msg.value without gasFee and fixed crypto fee
+     */
     function accrueFixedAndGasFees(
         address _integrator,
         IntegratorFeeInfo memory _info,
         uint256 _blockchainID
-    ) internal returns (uint256 _totalCryptoFee) {
-        _totalCryptoFee = accrueFixedCryptoFee(_integrator, _info);
+    ) internal returns (uint256 _amountWithoutCryptoFee) {
+        _amountWithoutCryptoFee = accrueFixedCryptoFee(_integrator, _info);
+
         uint256 _gasFee = blockchainToGasFee[_blockchainID];
-        _totalCryptoFee += _gasFee;
+        _amountWithoutCryptoFee -= _gasFee;
+
         availableRubicGasFee += _gasFee;
     }
 
