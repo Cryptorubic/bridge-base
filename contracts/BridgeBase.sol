@@ -25,7 +25,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
     // Struct with all info about integrator fees
     mapping(address => IntegratorFeeInfo) public integratorToFeeInfo;
     // Amount of collected fees in native token integrator -> native fees
-    mapping(address => uint256) public integratorToCollectedCryptoFee;
+    mapping(address => uint256) public availableIntegratorCryptoFee;
 
     // token -> minAmount for swap
     mapping(address => uint256) public minTokenAmount;
@@ -33,14 +33,14 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
     mapping(address => uint256) public maxTokenAmount;
 
     // token -> rubic collected fees
-    mapping(address => uint256) public availableRubicFee;
+    mapping(address => uint256) public availableRubicTokenFee;
     // token -> integrator collected fees
-    mapping(address => mapping(address => uint256)) public availableIntegratorFee;
+    mapping(address => mapping(address => uint256)) public availableIntegratorTokenFee;
 
     // Rubic fixed fee for swap
     uint256 public fixedCryptoFee;
     // Collected rubic fees in native token
-    uint256 public collectedCryptoFee;
+    uint256 public availableRubicCryptoFee;
 
     // AddressSet of whitelisted addresses
     EnumerableSetUpgradeable.AddressSet internal availableRouters;
@@ -136,7 +136,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
             _fixedCryptoFee = uint256(_info.fixedFeeAmount);
             _RubicPart = (_fixedCryptoFee * _info.RubicFixedCryptoShare) / DENOMINATOR;
 
-            integratorToCollectedCryptoFee[_integrator] += _fixedCryptoFee - _RubicPart;
+            availableIntegratorCryptoFee[_integrator] += _fixedCryptoFee - _RubicPart;
 
             emit FixedCryptoFee(_RubicPart, _fixedCryptoFee - _RubicPart, _integrator);
         } else {
@@ -145,7 +145,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
             emit FixedCryptoFee(_fixedCryptoFee, 0, address(0));
         }
 
-        collectedCryptoFee += _RubicPart;
+        availableRubicCryptoFee += _RubicPart;
 
         // Underflow is not possible
         return (msg.value - _fixedCryptoFee);
@@ -171,9 +171,9 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
         (uint256 _totalFees, uint256 _RubicFee) = _calculateFee(_info, _amountWithFee, _initBlockchainNum);
 
         if (_integrator != address(0)) {
-            availableIntegratorFee[_token][_integrator] += _totalFees - _RubicFee;
+            availableIntegratorTokenFee[_token][_integrator] += _totalFees - _RubicFee;
         }
-        availableRubicFee[_token] += _RubicFee;
+        availableRubicTokenFee[_token] += _RubicFee;
 
         emit TokenFee(_RubicFee, _totalFees - _RubicFee, _integrator, _token);
 
@@ -205,18 +205,18 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
         uint256 _amount;
 
         if (_token == address(0)) {
-            _amount = integratorToCollectedCryptoFee[_integrator];
-            integratorToCollectedCryptoFee[_integrator] = 0;
+            _amount = availableIntegratorCryptoFee[_integrator];
+            availableIntegratorCryptoFee[_integrator] = 0;
             emit FixedCryptoFeeCollected(_amount, _integrator);
         }
 
-        _amount += availableIntegratorFee[_token][_integrator];
+        _amount += availableIntegratorTokenFee[_token][_integrator];
 
         if (_amount == 0) {
             revert ZeroAmount();
         }
 
-        availableIntegratorFee[_token][_integrator] = 0;
+        availableIntegratorTokenFee[_token][_integrator] = 0;
 
         sendToken(_token, _amount, _integrator);
 
@@ -246,12 +246,12 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
      * @param _token The token to collect fees in
      */
     function collectRubicFee(address _token) external onlyManagerOrAdmin {
-        uint256 _amount = availableRubicFee[_token];
+        uint256 _amount = availableRubicTokenFee[_token];
         if (_amount == 0) {
             revert ZeroAmount();
         }
 
-        availableRubicFee[_token] = 0;
+        availableRubicTokenFee[_token] = 0;
         sendToken(_token, _amount, msg.sender);
 
         emit RubicTokenFeeCollected(_amount, _token);
@@ -261,8 +261,8 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
      * @dev Calling this function managers can collect Rubic's fixed crypto fee
      */
     function collectRubicCryptoFee() external onlyManagerOrAdmin {
-        uint256 _cryptoFee = collectedCryptoFee;
-        collectedCryptoFee = 0;
+        uint256 _cryptoFee = availableRubicCryptoFee;
+        availableRubicCryptoFee = 0;
 
         sendToken(address(0), _cryptoFee, msg.sender);
 

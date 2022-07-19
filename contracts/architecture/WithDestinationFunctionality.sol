@@ -17,7 +17,7 @@ contract WithDestinationFunctionality is BridgeBase {
     mapping(uint256 => uint256) public blockchainToRubicPlatformFee;
     mapping(uint256 => uint256) public blockchainToGasFee;
 
-    uint256 public collectedGasFee;
+    uint256 public availableRubicGasFee;
 
     bytes32 public constant RELAYER_ROLE = keccak256('RELAYER_ROLE');
 
@@ -60,7 +60,7 @@ contract WithDestinationFunctionality is BridgeBase {
         _totalCryptoFee = accrueFixedCryptoFee(_integrator, _info);
         uint256 _gasFee = blockchainToGasFee[_blockchainID];
         _totalCryptoFee += _gasFee;
-        collectedGasFee += _gasFee;
+        availableRubicGasFee += _gasFee;
     }
 
     function _calculateFee(
@@ -103,8 +103,8 @@ contract WithDestinationFunctionality is BridgeBase {
     }
 
     function collectGasFee(address _to) external onlyManagerOrAdmin {
-        uint256 _gasFee = collectedGasFee;
-        collectedGasFee = 0;
+        uint256 _gasFee = availableRubicGasFee;
+        availableRubicGasFee = 0;
         sendToken(address(0), _gasFee, _to);
     }
 

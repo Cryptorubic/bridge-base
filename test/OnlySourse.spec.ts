@@ -218,7 +218,7 @@ describe('TestOnlySource', () => {
                 feeAmount,
                 'wrong amount of swapped token on the contract as fees'
             );
-            expect(await bridge.availableRubicFee(swapToken.address)).to.be.eq(
+            expect(await bridge.availableRubicTokenFee(swapToken.address)).to.be.eq(
                 RubicFee,
                 'wrong Rubic fees collected'
             );
@@ -246,12 +246,12 @@ describe('TestOnlySource', () => {
                 feeAmount,
                 'wrong amount of swapped token on the contract as fees'
             );
-            expect(await bridge.availableRubicFee(swapToken.address)).to.be.eq(
+            expect(await bridge.availableRubicTokenFee(swapToken.address)).to.be.eq(
                 RubicFee,
                 'wrong Rubic fees collected'
             );
             expect(
-                await bridge.availableIntegratorFee(swapToken.address, integratorWallet.address)
+                await bridge.availableIntegratorTokenFee(swapToken.address, integratorWallet.address)
             ).to.be.eq(integratorFee, 'wrong integrator fees collected');
         });
         it('check fixed crypto fee without integrator', async () => {
@@ -278,10 +278,10 @@ describe('TestOnlySource', () => {
             await callBridge({ integrator: integratorWallet.address });
 
             expect(await waffle.provider.getBalance(bridge.address)).to.be.eq(totalCryptoFee);
-            expect(await bridge.integratorToCollectedCryptoFee(integratorWallet.address)).to.be.eq(
+            expect(await bridge.availableIntegratorCryptoFee(integratorWallet.address)).to.be.eq(
                 integratorFixedFee
             );
-            expect(await bridge.collectedCryptoFee()).to.be.eq(RubicFixedFee);
+            expect(await bridge.availableRubicCryptoFee()).to.be.eq(RubicFixedFee);
         });
     });
 });
