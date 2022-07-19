@@ -6,6 +6,8 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 import {ITestDEX} from './TestDEX.sol';
 
+error NotInWhitelist(address router);
+
 contract TestOnlySource is OnlySourceFunctionality {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
 
@@ -45,7 +47,10 @@ contract TestOnlySource is OnlySourceFunctionality {
         whenNotPaused
         EventEmitter(_params)
     {
-        require(availableRouters.contains(_router), 'TestBridge: no such router');
+        if (!availableRouters.contains(_router)) {
+            revert NotInWhitelist(_router);
+        }
+
         IntegratorFeeInfo memory _info = integratorToFeeInfo[_params.integrator];
 
         IERC20(_params.srcInputToken).transferFrom(msg.sender, address(this), _params.srcInputAmount);

@@ -43,7 +43,7 @@ contract WithDestinationFunctionality is BridgeBase {
             revert LengthMismatch();
         }
 
-        for (uint256 i; i < length;) {
+        for (uint256 i; i < length; ) {
             blockchainToGasFee[_blockchainIDs[i]] = _blockchainToGasFee[i];
             blockchainToRubicPlatformFee[_blockchainIDs[i]] = _blockchainToRubicPlatformFee[i];
 
