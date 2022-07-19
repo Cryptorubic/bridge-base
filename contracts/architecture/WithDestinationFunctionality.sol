@@ -45,6 +45,10 @@ contract WithDestinationFunctionality is BridgeBase {
         }
 
         for (uint256 i; i < length; ) {
+            if (_blockchainToRubicPlatformFee[i] > DENOMINATOR) {
+                revert FeeTooHigh();
+            }
+
             blockchainToGasFee[_blockchainIDs[i]] = _blockchainToGasFee[i];
             blockchainToRubicPlatformFee[_blockchainIDs[i]] = _blockchainToRubicPlatformFee[i];
 
