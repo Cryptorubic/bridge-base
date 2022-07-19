@@ -130,9 +130,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
     function accrueFixedCryptoFee(address _integrator, IntegratorFeeInfo memory _info) internal returns (uint256) {
         uint256 _fixedCryptoFee;
         uint256 _RubicPart;
-        // reference to https://gist.github.com/grGred/9bab8b9bad0cd42fc23d4e31e7347144#-0-is-cheaper-than--0-sometimes
         if (_info.fixedFeeAmount > 0 && _info.isIntegrator) {
-            // '>' is cheaper than '!=' in if statements with optimizer enabled
             _fixedCryptoFee = uint256(_info.fixedFeeAmount);
             _RubicPart = (_fixedCryptoFee * _info.RubicFixedCryptoShare) / DENOMINATOR;
 
