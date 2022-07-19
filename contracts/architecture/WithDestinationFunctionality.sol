@@ -38,11 +38,12 @@ contract WithDestinationFunctionality is BridgeBase {
     ) internal onlyInitializing {
         __BridgeBaseInit(_fixedCryptoFee, _routers, _tokens, _minTokenAmounts, _maxTokenAmounts);
 
-        if (_blockchainToGasFee.length != _blockchainToRubicPlatformFee.length) {
+        uint256 length = _blockchainIDs.length;
+        if (_blockchainToGasFee.length != length || _blockchainToRubicPlatformFee.length != length) {
             revert LengthMismatch();
         }
 
-        for (uint256 i; i < _blockchainToGasFee.length; ) {
+        for (uint256 i; i < length;) {
             blockchainToGasFee[_blockchainIDs[i]] = _blockchainToGasFee[i];
             blockchainToRubicPlatformFee[_blockchainIDs[i]] = _blockchainToRubicPlatformFee[i];
 
