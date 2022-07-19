@@ -45,10 +45,10 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
     // AddressSet of whitelisted addresses
     EnumerableSetUpgradeable.AddressSet internal availableRouters;
 
-    event FixedCryptoFee(uint256 RubicPart, uint256 integratorPart, address integrator);
+    event FixedCryptoFee(uint256 RubicPart, uint256 integratorPart, address indexed integrator);
     event FixedCryptoFeeCollected(uint256 amount, address collector);
-    event TokenFee(uint256 RubicPart, uint256 integratorPart, address integrator, address token);
-    event IntegratorTokenFeeCollected(uint256 amount, address integrator, address token);
+    event TokenFee(uint256 RubicPart, uint256 integratorPart, address indexed integrator, address token);
+    event IntegratorTokenFeeCollected(uint256 amount, address indexed integrator, address token);
     event RubicTokenFeeCollected(uint256 amount, address token);
 
     struct IntegratorFeeInfo {
