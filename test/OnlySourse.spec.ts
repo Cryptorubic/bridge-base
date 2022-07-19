@@ -6,6 +6,7 @@ import { BigNumber as BN, ContractTransaction } from 'ethers';
 import * as consts from './shared/consts';
 import { onlySourceFixture } from './shared/fixtures';
 import { calcCryptoFees, calcTokenFees } from './shared/utils';
+const { balance } = require('@openzeppelin/test-helpers');
 
 const createFixtureLoader = waffle.createFixtureLoader;
 
@@ -349,6 +350,91 @@ describe('TestOnlySource', () => {
                 integratorFixedFee
             );
             expect(await bridge.availableRubicCryptoFee()).to.be.eq(RubicFixedFee);
+        });
+    });
+
+    describe('collect functions', () => {
+        const tokenFee = BN.from('60000'); // 6%
+        const RubicFixedCryptoShare = BN.from('800000'); // 80%
+        const RubicTokenShare = BN.from('400000'); // 40%
+        const fixedFeeAmount = consts.FIXED_CRYPTO_FEE.add(BN.from('228'));
+
+        let integratorFee;
+        let RubicFee;
+        let integratorFixedFee;
+        let RubicFixedFee;
+
+        beforeEach('setup before collects', async () => {
+            await bridge.grantRole(await bridge.MANAGER_ROLE(), manager.address);
+
+            await swapToken.transfer(swapper.address, ethers.utils.parseEther('10'));
+            await swapToken.connect(swapper).approve(bridge.address, ethers.constants.MaxUint256);
+
+            await bridge.setIntegratorInfo(integratorWallet.address, {
+                isIntegrator: true,
+                tokenFee,
+                RubicFixedCryptoShare,
+                RubicTokenShare,
+                fixedFeeAmount
+            });
+
+            bridge = bridge.connect(swapper);
+
+            ({ integratorFee, RubicFee } = await calcTokenFees({
+                bridge,
+                amountWithFee: consts.DEFAULT_AMOUNT_IN,
+                integrator: integratorWallet.address
+            }));
+
+            ({ integratorFixedFee, RubicFixedFee } = await calcCryptoFees({
+                bridge,
+                integrator: integratorWallet.address
+            }));
+
+            await callBridge({ integrator: integratorWallet.address });
+
+            bridge = bridge.connect(manager);
+        });
+
+        it('collect integrator token fee by integrator', async () => {
+            await bridge
+                .connect(integratorWallet)
+                ['collectIntegratorFee(address)'](swapToken.address);
+
+            expect(await swapToken.balanceOf(integratorWallet.address)).to.be.eq(integratorFee);
+        });
+        it('collect integrator token fee by manager', async () => {
+            await bridge['collectIntegratorFee(address,address)'](
+                integratorWallet.address,
+                swapToken.address
+            );
+
+            expect(await swapToken.balanceOf(integratorWallet.address)).to.be.eq(integratorFee);
+        });
+        it('collect Rubic Token fee', async () => {
+            await bridge.collectRubicFee(swapToken.address);
+
+            expect(await swapToken.balanceOf(manager.address)).to.be.eq(RubicFee);
+        });
+        it('collect integrator crypto fee', async () => {
+            const tracker = await balance.tracker(integratorWallet.address);
+
+            await bridge
+                .connect(integratorWallet)
+                ['collectIntegratorFee(address)'](ethers.constants.AddressZero);
+
+            const { delta, fees } = await tracker.deltaWithFees();
+
+            expect(delta.add(fees).toString()).to.be.equal(integratorFixedFee.toString());
+        });
+        it('collect Rubic crypto fee', async () => {
+            const tracker = await balance.tracker(manager.address);
+
+            await bridge.collectRubicCryptoFee();
+
+            const { delta, fees } = await tracker.deltaWithFees();
+
+            expect(delta.add(fees).toString()).to.be.equal(RubicFixedFee.toString());
         });
     });
 });

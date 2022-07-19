@@ -226,7 +226,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
      * @param _token The token to collect fees in
      */
     function collectIntegratorFee(address _token) external nonReentrant {
-        _collectIntegrator(_token, msg.sender);
+        _collectIntegrator(msg.sender, _token);
     }
 
     /**
@@ -236,7 +236,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
      * @param _token The token to collect fees in
      */
     function collectIntegratorFee(address _integrator, address _token) external onlyManagerOrAdmin {
-        _collectIntegrator(_token, _integrator);
+        _collectIntegrator(_integrator, _token);
     }
 
     /**
