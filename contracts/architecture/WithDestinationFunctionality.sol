@@ -65,12 +65,10 @@ contract WithDestinationFunctionality is BridgeBase {
         IntegratorFeeInfo memory _info,
         uint256 _blockchainID
     ) internal returns (uint256 _amountWithoutCryptoFee) {
-        _amountWithoutCryptoFee = accrueFixedCryptoFee(_integrator, _info);
-
         uint256 _gasFee = blockchainToGasFee[_blockchainID];
-        _amountWithoutCryptoFee -= _gasFee;
-
         availableRubicGasFee += _gasFee;
+
+        _amountWithoutCryptoFee = accrueFixedCryptoFee(_integrator, _info) - _gasFee;
     }
 
     function _calculateFee(
