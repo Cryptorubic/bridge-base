@@ -94,7 +94,7 @@ export async function calcCryptoFees({
     if (dstChainID !== undefined) {
         gasFee = await (<WithDestinationFunctionality>bridge).blockchainToGasFee(dstChainID);
 
-        totalCryptoFee += gasFee;
+        totalCryptoFee = totalCryptoFee.add(gasFee);
     }
 
     return { totalCryptoFee, fixedCryptoFee, RubicFixedFee, integratorFixedFee, gasFee };
