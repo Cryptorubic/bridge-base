@@ -2,7 +2,9 @@ import '@typechain/hardhat';
 import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-waffle';
 import '@nomiclabs/hardhat-etherscan';
+import "@nomiclabs/hardhat-web3";
 import 'hardhat-contract-sizer';
+import 'solidity-coverage';
 
 import { SolcUserConfig } from 'hardhat/types'
 
@@ -19,11 +21,11 @@ const {
 
 
 const DEFAULT_COMPILER_SETTINGS: SolcUserConfig = {
-  version: '0.8.9',
+  version: '0.8.15',
   settings: {
     optimizer: {
       enabled: true,
-      runs: 0,
+      runs: 200,
     },
     metadata: {
       bytecodeHash: 'none',
