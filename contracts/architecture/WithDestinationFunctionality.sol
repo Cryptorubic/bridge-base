@@ -1,4 +1,6 @@
-pragma solidity ^0.8.10;
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.4;
 
 import '../BridgeBase.sol';
 
@@ -15,44 +17,70 @@ contract WithDestinationFunctionality is BridgeBase {
     mapping(uint256 => uint256) public blockchainToRubicPlatformFee;
     mapping(uint256 => uint256) public blockchainToGasFee;
 
-    uint256 public collectedGasFee;
+    uint256 public availableRubicGasFee;
 
     bytes32 public constant RELAYER_ROLE = keccak256('RELAYER_ROLE');
 
     modifier onlyRelayer() {
-        if (!hasRole(RELAYER_ROLE, msg.sender)) {
-            revert NotARelayer();
-        }
+        checkIsRelayer();
         _;
     }
+    // TODO add event Emitter
 
-    function __WithDestinationFunctionalityInitUnchained(
+    function __WithDestinationFunctionalityInit(
+        uint256 _fixedCryptoFee,
+        address[] memory _routers,
+        address[] memory _tokens,
+        uint256[] memory _minTokenAmounts,
+        uint256[] memory _maxTokenAmounts,
         uint256[] memory _blockchainIDs,
         uint256[] memory _blockchainToGasFee,
         uint256[] memory _blockchainToRubicPlatformFee
     ) internal onlyInitializing {
-        if(_blockchainToGasFee.length != _blockchainToRubicPlatformFee.length) {
+        __BridgeBaseInit(_fixedCryptoFee, _routers, _tokens, _minTokenAmounts, _maxTokenAmounts);
+
+        uint256 length = _blockchainIDs.length;
+        if (_blockchainToGasFee.length != length || _blockchainToRubicPlatformFee.length != length) {
             revert LengthMismatch();
         }
 
-        for (uint256 i; i < _blockchainToGasFee.length; i++) {
+        for (uint256 i; i < length; ) {
+            if (_blockchainToRubicPlatformFee[i] > DENOMINATOR) {
+                revert FeeTooHigh();
+            }
+
             blockchainToGasFee[_blockchainIDs[i]] = _blockchainToGasFee[i];
             blockchainToRubicPlatformFee[_blockchainIDs[i]] = _blockchainToRubicPlatformFee[i];
+
+            unchecked {
+                ++i;
+            }
         }
     }
 
-    function accrueFixedAndGasFees(address _integrator, IntegratorFeeInfo memory _info, uint256 _blockchainID) internal returns (uint256 _totalCryptoFee) {
-        _totalCryptoFee = accrueFixedCryptoFee(_integrator, _info);
+    /**
+     * @dev Calculates and accrues gas fee and fixed crypto fee
+     * @param _integrator Integrator's address if there is one
+     * @param _info A struct with integrator fee info
+     * @param _blockchainID ID of the target blockchain
+     * @return _amountWithoutCryptoFee The msg.value without gasFee and fixed crypto fee
+     */
+    function accrueFixedAndGasFees(
+        address _integrator,
+        IntegratorFeeInfo memory _info,
+        uint256 _blockchainID
+    ) internal returns (uint256 _amountWithoutCryptoFee) {
         uint256 _gasFee = blockchainToGasFee[_blockchainID];
-        _totalCryptoFee += _gasFee;
-        collectedGasFee += _gasFee;
+        availableRubicGasFee += _gasFee;
+
+        _amountWithoutCryptoFee = accrueFixedCryptoFee(_integrator, _info) - _gasFee;
     }
 
     function _calculateFee(
         IntegratorFeeInfo memory _info,
         uint256 _amountWithFee,
         uint256 initBlockchainNum
-    ) internal override virtual view returns (uint256 _totalFee, uint256 _RubicFee) {
+    ) internal view virtual override returns (uint256 _totalFee, uint256 _RubicFee) {
         if (_info.isIntegrator) {
             (_totalFee, _RubicFee) = _calculateFeeWithIntegrator(_amountWithFee, _info);
         } else {
@@ -72,7 +100,7 @@ contract WithDestinationFunctionality is BridgeBase {
      */
     function setRubicPlatformFeeOfBlockchain(uint256 _blockchainID, uint256 _RubicPlatformFee)
         external
-        onlyManagerAndAdmin
+        onlyManagerOrAdmin
     {
         require(_RubicPlatformFee <= DENOMINATOR);
         blockchainToRubicPlatformFee[_blockchainID] = _RubicPlatformFee;
@@ -83,15 +111,14 @@ contract WithDestinationFunctionality is BridgeBase {
      * @param _blockchainID ID of the blockchain
      * @param _gasFee Fee amount of native token that must be sent in init call
      */
-    function setGasFeeOfBlockchain(uint256 _blockchainID, uint256 _gasFee) external onlyManagerAndAdmin {
+    function setGasFeeOfBlockchain(uint256 _blockchainID, uint256 _gasFee) external onlyManagerOrAdmin {
         blockchainToGasFee[_blockchainID] = _gasFee;
     }
 
-    function collectGasFee(address payable _to) external onlyManagerAndAdmin {
-        uint256 _gasFee = collectedGasFee;
-        collectedGasFee = 0;
-
-        _to.transfer(_gasFee);
+    function collectGasFee(address _to) external onlyManagerOrAdmin {
+        uint256 _gasFee = availableRubicGasFee;
+        availableRubicGasFee = 0;
+        sendToken(address(0), _gasFee, _to);
     }
 
     /// TX STATUSES MANAGEMENT ///
@@ -105,20 +132,22 @@ contract WithDestinationFunctionality is BridgeBase {
         if (_statusCode == SwapStatus.Null) {
             revert CantSetToNull();
         }
-        if (processedTransactions[_id] == SwapStatus.Succeeded || processedTransactions[_id] == SwapStatus.Fallback) {
+
+        SwapStatus _status = processedTransactions[_id];
+
+        if (_status == SwapStatus.Succeeded || _status == SwapStatus.Fallback) {
             revert Unchangeable();
         }
 
         processedTransactions[_id] = _statusCode;
     }
 
-    /// VIEW FUNCTIONS ///
-
     /**
      * @dev Function to check if address is belongs to relayer role
-     * @param _who Address to check
      */
-    function isRelayer(address _who) public view returns (bool) {
-        return hasRole(RELAYER_ROLE, _who);
+    function checkIsRelayer() internal view {
+        if (!hasRole(RELAYER_ROLE, msg.sender)) {
+            revert NotARelayer();
+        }
     }
 }

@@ -2,7 +2,9 @@ import '@typechain/hardhat';
 import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-waffle';
 import '@nomiclabs/hardhat-etherscan';
+import "@nomiclabs/hardhat-web3";
 import 'hardhat-contract-sizer';
+import 'solidity-coverage';
 
 import { SolcUserConfig } from 'hardhat/types'
 
