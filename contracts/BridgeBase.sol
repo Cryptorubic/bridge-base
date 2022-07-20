@@ -67,6 +67,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
         uint256 dstMinOutputAmount;
         address recipient;
         address integrator;
+        address router;
     }
 
     // reference to https://github.com/OpenZeppelin/openzeppelin-contracts/pull/3347/
