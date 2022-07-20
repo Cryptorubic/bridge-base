@@ -1,6 +1,6 @@
 {
   "name": "rubic-bridge-base",
-  "version": "1.2.1-beta.8",
+  "version": "1.2.1",
   "scripts": {
     "build": "tsc",
     "lint": "./node_modules/.bin/solhint -f table contracts/**/*.sol && eslint test/** ",
