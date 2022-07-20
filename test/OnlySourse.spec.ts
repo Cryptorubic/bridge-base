@@ -6,7 +6,7 @@ import { BigNumber as BN, ContractTransaction } from 'ethers';
 import * as consts from './shared/consts';
 import { onlySourceFixture } from './shared/fixtures';
 import { calcCryptoFees, calcTokenFees } from './shared/utils';
-const { balance } = require('@openzeppelin/test-helpers');
+import { balance } from '@openzeppelin/test-helpers';
 
 const createFixtureLoader = waffle.createFixtureLoader;
 
