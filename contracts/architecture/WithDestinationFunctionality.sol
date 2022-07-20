@@ -12,6 +12,9 @@ contract WithDestinationFunctionality is BridgeBase {
         Fallback
     }
 
+    event CrossChainRequestSent(bytes32 indexed id, BaseCrossChainParams parameters);
+    event CrossChainProcessed(bytes32 indexed id, address outputTokenAddress, uint256 amount, SwapStatus status);
+
     mapping(bytes32 => SwapStatus) public processedTransactions;
 
     mapping(uint256 => uint256) public blockchainToRubicPlatformFee;
