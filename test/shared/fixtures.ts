@@ -40,11 +40,11 @@ export const onlySourceFixture: Fixture<BridgeFixture> = async function (): Prom
     const bridgeFactory = await ethers.getContractFactory('TestOnlySource');
     const bridge = (await bridgeFactory.deploy(
         FIXED_CRYPTO_FEE,
+        RUBIC_PLATFORM_FEE,
         [DEX.address],
         [transitToken.address, swapToken.address],
         [MIN_TOKEN_AMOUNT, MIN_TOKEN_AMOUNT],
-        [MAX_TOKEN_AMOUNT, MAX_TOKEN_AMOUNT],
-        RUBIC_PLATFORM_FEE
+        [MAX_TOKEN_AMOUNT, MAX_TOKEN_AMOUNT]
     )) as Bridge;
 
     return { bridge, transitToken, swapToken, DEX };

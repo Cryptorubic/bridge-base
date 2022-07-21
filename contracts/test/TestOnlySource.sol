@@ -15,42 +15,42 @@ contract TestOnlySource is OnlySourceFunctionality {
 
     constructor(
         uint256 _fixedCryptoFee,
+        uint256 _RubicPlatformFee,
         address[] memory _routers,
         address[] memory _tokens,
         uint256[] memory _minTokenAmounts,
-        uint256[] memory _maxTokenAmounts,
-        uint256 _RubicPlatformFee
+        uint256[] memory _maxTokenAmounts
     ) {
-        initialize(_fixedCryptoFee, _routers, _tokens, _minTokenAmounts, _maxTokenAmounts, _RubicPlatformFee);
+        initialize(_fixedCryptoFee, _RubicPlatformFee, _routers, _tokens, _minTokenAmounts, _maxTokenAmounts);
     }
 
     function initialize(
         uint256 _fixedCryptoFee,
+        uint256 _RubicPlatformFee,
         address[] memory _routers,
         address[] memory _tokens,
         uint256[] memory _minTokenAmounts,
-        uint256[] memory _maxTokenAmounts,
-        uint256 _RubicPlatformFee
+        uint256[] memory _maxTokenAmounts
     ) private initializer {
         __OnlySourceFunctionalityInit(
             _fixedCryptoFee,
+            _RubicPlatformFee,
             _routers,
             _tokens,
             _minTokenAmounts,
-            _maxTokenAmounts,
-            _RubicPlatformFee
+            _maxTokenAmounts
         );
     }
 
-    function crossChainWithSwap(BaseCrossChainParams calldata _params, address _router)
+    function crossChainWithSwap(BaseCrossChainParams calldata _params)
         external
         payable
         nonReentrant
         whenNotPaused
         eventEmitter(_params)
     {
-        if (!availableRouters.contains(_router)) {
-            revert NotInWhitelist(_router);
+        if (!availableRouters.contains(_params.router)) {
+            revert NotInWhitelist(_params.router);
         }
 
         IntegratorFeeInfo memory _info = integratorToFeeInfo[_params.integrator];
@@ -67,20 +67,8 @@ contract TestOnlySource is OnlySourceFunctionality {
             _params.srcInputToken
         );
 
-        SmartApprove.smartApprove(_params.srcInputToken, _amountIn, _router);
+        SmartApprove.smartApprove(_params.srcInputToken, _amountIn, _params.router);
 
-        ITestDEX(_router).swap(_params.srcInputToken, _amountIn, _params.dstOutputToken);
+        ITestDEX(_params.router).swap(_params.srcInputToken, _amountIn, _params.dstOutputToken);
     }
-
-    //    function _calculateFee(
-    //        IntegratorFeeInfo memory _info,
-    //        uint256 _amountWithFee,
-    //        uint256 _initBlockchainNum
-    //    ) internal override(BridgeBase, OnlySourceFunctionality) view returns (uint256 _totalFee, uint256 _RubicFee) {
-    //        (_totalFee, _RubicFee) = OnlySourceFunctionality._calculateFee(
-    //            _info,
-    //            _amountWithFee,
-    //            _initBlockchainNum
-    //        );
-    //    }
 }

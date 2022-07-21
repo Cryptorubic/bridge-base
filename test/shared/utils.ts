@@ -31,14 +31,7 @@ export async function calcTokenFees({
         integratorFee = feeAmount.sub(RubicFee);
         amountWithoutFee = amountWithFee.sub(feeAmount);
     } else {
-        let fee;
-        if (initChainID === undefined) {
-            fee = await (<OnlySourceFunctionality>bridge).RubicPlatformFee();
-        } else {
-            fee = await (<WithDestinationFunctionality>bridge).blockchainToRubicPlatformFee(
-                initChainID
-            );
-        }
+        const fee = await bridge.RubicPlatformFee();
 
         feeAmount = amountWithFee.mul(fee).div(DENOMINATOR);
         RubicFee = feeAmount;

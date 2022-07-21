@@ -37,6 +37,8 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
     // token -> integrator collected fees
     mapping(address => mapping(address => uint256)) public availableIntegratorTokenFee;
 
+    // Rubic token fee
+    uint256 public RubicPlatformFee;
     // Rubic fixed fee for swap
     uint256 public fixedCryptoFee;
     // Collected rubic fees in native token
@@ -90,6 +92,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
 
     function __BridgeBaseInit(
         uint256 _fixedCryptoFee,
+        uint256 _RubicPlatformFee,
         address[] memory _routers,
         address[] memory _tokens,
         uint256[] memory _minTokenAmounts,
@@ -98,6 +101,12 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
         __Pausable_init_unchained();
 
         fixedCryptoFee = _fixedCryptoFee;
+
+        if (_RubicPlatformFee > DENOMINATOR) {
+            revert FeeTooHigh();
+        }
+
+        RubicPlatformFee = _RubicPlatformFee;
 
         uint256 routerLength = _routers.length;
         for (uint256 i; i < routerLength; ) {
@@ -195,6 +204,20 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
             _totalFee = FullMath.mulDiv(_amountWithFee, _info.tokenFee, DENOMINATOR);
 
             _RubicFee = FullMath.mulDiv(_totalFee, _info.RubicTokenShare, DENOMINATOR);
+        }
+    }
+
+    function _calculateFee(
+        IntegratorFeeInfo memory _info,
+        uint256 _amountWithFee,
+        uint256
+    ) internal view returns (uint256 _totalFee, uint256 _RubicFee) {
+        if (_info.isIntegrator) {
+            (_totalFee, _RubicFee) = _calculateFeeWithIntegrator(_amountWithFee, _info);
+        } else {
+            _totalFee = FullMath.mulDiv(_amountWithFee, RubicPlatformFee, DENOMINATOR);
+
+            _RubicFee = _totalFee;
         }
     }
 
@@ -302,6 +325,14 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
         fixedCryptoFee = _fixedCryptoFee;
     }
 
+    function setRubicPlatformFee(uint256 _platformFee) external onlyManagerOrAdmin {
+        if (_platformFee > DENOMINATOR) {
+            revert FeeTooHigh();
+        }
+
+        RubicPlatformFee = _platformFee;
+    }
+
     /**
      * @dev Changes requirement for minimal token amount on transfers
      * @param _token The token address to setup
@@ -398,12 +429,6 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
             IERC20Upgradeable(_token).safeTransfer(_receiver, _amount);
         }
     }
-
-    function _calculateFee(
-        IntegratorFeeInfo memory _info,
-        uint256 _amountWithFee,
-        uint256 _initBlockchainNum
-    ) internal view virtual returns (uint256 _totalFee, uint256 _RubicFee) {}
 
     /**
      * @dev Plain fallback function to receive native

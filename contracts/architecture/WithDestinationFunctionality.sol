@@ -17,7 +17,6 @@ contract WithDestinationFunctionality is BridgeBase {
 
     mapping(bytes32 => SwapStatus) public processedTransactions;
 
-    mapping(uint256 => uint256) public blockchainToRubicPlatformFee;
     mapping(uint256 => uint256) public blockchainToGasFee;
 
     uint256 public availableRubicGasFee;
@@ -28,32 +27,26 @@ contract WithDestinationFunctionality is BridgeBase {
         checkIsRelayer();
         _;
     }
-    // TODO add event Emitter
 
     function __WithDestinationFunctionalityInit(
         uint256 _fixedCryptoFee,
+        uint256 _RubicPlatformFee,
         address[] memory _routers,
         address[] memory _tokens,
         uint256[] memory _minTokenAmounts,
         uint256[] memory _maxTokenAmounts,
         uint256[] memory _blockchainIDs,
-        uint256[] memory _blockchainToGasFee,
-        uint256[] memory _blockchainToRubicPlatformFee
+        uint256[] memory _blockchainToGasFee
     ) internal onlyInitializing {
-        __BridgeBaseInit(_fixedCryptoFee, _routers, _tokens, _minTokenAmounts, _maxTokenAmounts);
+        __BridgeBaseInit(_fixedCryptoFee, _RubicPlatformFee, _routers, _tokens, _minTokenAmounts, _maxTokenAmounts);
 
         uint256 length = _blockchainIDs.length;
-        if (_blockchainToGasFee.length != length || _blockchainToRubicPlatformFee.length != length) {
+        if (_blockchainToGasFee.length != length) {
             revert LengthMismatch();
         }
 
         for (uint256 i; i < length; ) {
-            if (_blockchainToRubicPlatformFee[i] > DENOMINATOR) {
-                revert FeeTooHigh();
-            }
-
             blockchainToGasFee[_blockchainIDs[i]] = _blockchainToGasFee[i];
-            blockchainToRubicPlatformFee[_blockchainIDs[i]] = _blockchainToRubicPlatformFee[i];
 
             unchecked {
                 ++i;
@@ -79,35 +72,7 @@ contract WithDestinationFunctionality is BridgeBase {
         _amountWithoutCryptoFee = accrueFixedCryptoFee(_integrator, _info) - _gasFee;
     }
 
-    function _calculateFee(
-        IntegratorFeeInfo memory _info,
-        uint256 _amountWithFee,
-        uint256 initBlockchainNum
-    ) internal view virtual override returns (uint256 _totalFee, uint256 _RubicFee) {
-        if (_info.isIntegrator) {
-            (_totalFee, _RubicFee) = _calculateFeeWithIntegrator(_amountWithFee, _info);
-        } else {
-            _totalFee = FullMath.mulDiv(_amountWithFee, blockchainToRubicPlatformFee[initBlockchainNum], DENOMINATOR);
-
-            _RubicFee = _totalFee;
-        }
-    }
-
     /// FEE MANAGEMENT ///
-
-    /**
-     * @dev Changes tokens values for blockchains in feeAmountOfBlockchain variables
-     * @notice tokens is represented as hundredths of a bip, i.e. 1e-6
-     * @param _blockchainID ID of the blockchain
-     * @param _RubicPlatformFee Fee amount to subtract from transfer amount
-     */
-    function setRubicPlatformFeeOfBlockchain(uint256 _blockchainID, uint256 _RubicPlatformFee)
-        external
-        onlyManagerOrAdmin
-    {
-        require(_RubicPlatformFee <= DENOMINATOR);
-        blockchainToRubicPlatformFee[_blockchainID] = _RubicPlatformFee;
-    }
 
     /**
      * @dev Changes crypto tokens values for blockchains in blockchainCryptoFee variables

@@ -49,9 +49,9 @@ describe('TestOnlySource', () => {
                 recipient,
                 srcInputAmount,
                 dstMinOutputAmount,
-                dstChainID
+                dstChainID,
+                router
             },
-            router,
             { value: value }
         );
     }
