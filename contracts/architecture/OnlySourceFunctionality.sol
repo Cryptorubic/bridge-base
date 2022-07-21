@@ -31,6 +31,14 @@ contract OnlySourceFunctionality is BridgeBase {
         RubicPlatformFee = _RubicPlatformFee;
     }
 
+    function setRubicPlatformFee(uint256 _platformFee) external onlyManagerOrAdmin {
+        if (_platformFee > DENOMINATOR) {
+            revert FeeTooHigh();
+        }
+
+        RubicPlatformFee = _platformFee;
+    }
+
     function _calculateFee(
         IntegratorFeeInfo memory _info,
         uint256 _amountWithFee,
