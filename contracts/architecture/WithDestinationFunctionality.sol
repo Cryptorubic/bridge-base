@@ -23,8 +23,8 @@ contract WithDestinationFunctionality is BridgeBase {
 
     bytes32 public constant RELAYER_ROLE = keccak256('RELAYER_ROLE');
 
-    modifier onlyRelayer() {
-        checkIsRelayer();
+    modifier onlyRelayer(address _relayer) {
+        checkIsRelayer(_relayer);
         _;
     }
 
@@ -96,7 +96,7 @@ contract WithDestinationFunctionality is BridgeBase {
      * @param _id ID of the transaction to change
      * @param _statusCode Associated status
      */
-    function changeTxStatus(bytes32 _id, SwapStatus _statusCode) external onlyRelayer {
+    function changeTxStatus(bytes32 _id, SwapStatus _statusCode) external onlyManagerOrAdmin {
         if (_statusCode == SwapStatus.Null) {
             revert CantSetToNull();
         }
@@ -113,9 +113,10 @@ contract WithDestinationFunctionality is BridgeBase {
     /**
      * @dev Function to check if address is belongs to relayer role
      */
-    function checkIsRelayer() internal view {
-        if (!hasRole(RELAYER_ROLE, msg.sender)) {
+    function checkIsRelayer(address _relayer) internal view {
+        if (!hasRole(RELAYER_ROLE, _relayer)) {
             revert NotARelayer();
         }
     }
+
 }
