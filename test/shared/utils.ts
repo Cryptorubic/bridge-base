@@ -25,6 +25,9 @@ export async function calcTokenFees({
 
     if (integrator !== undefined) {
         const feeInfo = await bridge.integratorToFeeInfo(integrator);
+        if (!feeInfo.isIntegrator) {
+            throw new Error('integrator is not active');
+        }
 
         feeAmount = amountWithFee.mul(feeInfo.tokenFee).div(DENOMINATOR);
         RubicFee = feeAmount.mul(feeInfo.RubicTokenShare).div(DENOMINATOR);
