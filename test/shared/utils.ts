@@ -25,7 +25,6 @@ export async function calcTokenFees({
 
     if (integrator !== undefined) {
         const feeInfo = await bridge.integratorToFeeInfo(integrator);
-        console.log(feeInfo);
         if (!feeInfo.isIntegrator) {
             throw new Error('integrator is not active');
         }
@@ -44,7 +43,7 @@ export async function calcTokenFees({
 
     //console.log(feeAmount, RubicFee, integratorFee, amountWithoutFee)
 
-    return {feeAmount, RubicFee, integratorFee, amountWithoutFee};
+    return { feeAmount, RubicFee, integratorFee, amountWithoutFee };
 }
 
 export async function calcCryptoFees({
