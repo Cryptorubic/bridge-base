@@ -5,13 +5,11 @@ import { DENOMINATOR } from './consts';
 export async function calcTokenFees({
     bridge,
     amountWithFee,
-    integrator,
-    initChainID
+    integrator
 }: {
     bridge: OnlySourceFunctionality | WithDestinationFunctionality;
     amountWithFee: BigNumber;
     integrator?: string;
-    initChainID?: BigNumberish;
 }): Promise<{
     amountWithoutFee: BigNumber;
     feeAmount: BigNumber;
@@ -25,14 +23,20 @@ export async function calcTokenFees({
 
     if (integrator !== undefined) {
         const feeInfo = await bridge.integratorToFeeInfo(integrator);
-        if (!feeInfo.isIntegrator) {
-            throw new Error('integrator is not active');
-        }
+        if (feeInfo.isIntegrator) {
+            feeAmount = amountWithFee.mul(feeInfo.tokenFee).div(DENOMINATOR);
+            RubicFee = feeAmount.mul(feeInfo.RubicTokenShare).div(DENOMINATOR);
+            integratorFee = feeAmount.sub(RubicFee);
+            amountWithoutFee = amountWithFee.sub(feeAmount);
+        } else {
+            console.log('WARNING: integrator is not active');
 
-        feeAmount = amountWithFee.mul(feeInfo.tokenFee).div(DENOMINATOR);
-        RubicFee = feeAmount.mul(feeInfo.RubicTokenShare).div(DENOMINATOR);
-        integratorFee = feeAmount.sub(RubicFee);
-        amountWithoutFee = amountWithFee.sub(feeAmount);
+            const fee = await bridge.RubicPlatformFee();
+
+            feeAmount = amountWithFee.mul(fee).div(DENOMINATOR);
+            RubicFee = feeAmount;
+            amountWithoutFee = amountWithFee.sub(feeAmount);
+        }
     } else {
         const fee = await bridge.RubicPlatformFee();
 
@@ -69,14 +73,15 @@ export async function calcCryptoFees({
 
     if (integrator !== undefined) {
         const feeInfo = await bridge.integratorToFeeInfo(integrator);
-
-        if (feeInfo.fixedFeeAmount.gt(BigNumber.from('0'))) {
+        if (feeInfo.isIntegrator) {
             totalCryptoFee = feeInfo.fixedFeeAmount;
-
             fixedCryptoFee = totalCryptoFee;
+
             RubicFixedFee = totalCryptoFee.mul(feeInfo.RubicFixedCryptoShare).div(DENOMINATOR);
             integratorFixedFee = totalCryptoFee.sub(RubicFixedFee);
         } else {
+            console.log('WARNING: integrator is not active');
+
             totalCryptoFee = await bridge.fixedCryptoFee();
 
             RubicFixedFee = totalCryptoFee;

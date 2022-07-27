@@ -328,6 +328,7 @@ describe('TestOnlySource', () => {
             expect(await waffle.provider.getBalance(bridge.address)).to.be.eq(
                 consts.FIXED_CRYPTO_FEE
             );
+            expect(await bridge.availableRubicCryptoFee()).to.be.eq(consts.FIXED_CRYPTO_FEE);
         });
         it('check fixed crypto fee with integrator', async () => {
             await bridge.connect(owner).setIntegratorInfo(integratorWallet.address, {
@@ -350,6 +351,21 @@ describe('TestOnlySource', () => {
                 integratorFixedFee
             );
             expect(await bridge.availableRubicCryptoFee()).to.be.eq(RubicFixedFee);
+        });
+        it('check fixed crypto fee with integrator (fixedCryptoFee = 0)', async () => {
+            await bridge.connect(owner).setIntegratorInfo(integratorWallet.address, {
+                isIntegrator: true,
+                tokenFee: '60000', // 6%
+                RubicFixedCryptoShare: '800000', // 80%
+                RubicTokenShare: '400000', // 40%,
+                fixedFeeAmount: '0'
+            });
+
+            await callBridge({ integrator: integratorWallet.address });
+
+            expect(await waffle.provider.getBalance(bridge.address)).to.be.eq(0);
+            expect(await bridge.availableIntegratorCryptoFee(integratorWallet.address)).to.be.eq(0);
+            expect(await bridge.availableRubicCryptoFee()).to.be.eq(0);
         });
     });
 
