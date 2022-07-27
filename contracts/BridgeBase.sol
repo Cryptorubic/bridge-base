@@ -140,20 +140,22 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
     function accrueFixedCryptoFee(address _integrator, IntegratorFeeInfo memory _info) internal returns (uint256) {
         uint256 _fixedCryptoFee;
         uint256 _RubicPart;
-        if (_info.fixedFeeAmount > 0 && _info.isIntegrator) {
+        if (_info.isIntegrator) {
             _fixedCryptoFee = uint256(_info.fixedFeeAmount);
-            _RubicPart = (_fixedCryptoFee * _info.RubicFixedCryptoShare) / DENOMINATOR;
 
-            availableIntegratorCryptoFee[_integrator] += _fixedCryptoFee - _RubicPart;
+            if (_fixedCryptoFee > 0) {
+               _RubicPart = (_fixedCryptoFee * _info.RubicFixedCryptoShare) / DENOMINATOR;
 
-            emit FixedCryptoFee(_RubicPart, _fixedCryptoFee - _RubicPart, _integrator);
+                availableIntegratorCryptoFee[_integrator] += _fixedCryptoFee - _RubicPart;
+            }
         } else {
             _fixedCryptoFee = fixedCryptoFee;
-
-            emit FixedCryptoFee(_fixedCryptoFee, 0, address(0));
+            _RubicPart = _fixedCryptoFee;
         }
 
         availableRubicCryptoFee += _RubicPart;
+
+        emit FixedCryptoFee(_RubicPart, _fixedCryptoFee - _RubicPart, _integrator);
 
         // Underflow is prevented by sol 0.8
         return (msg.value - _fixedCryptoFee);
