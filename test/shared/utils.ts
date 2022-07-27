@@ -5,13 +5,11 @@ import { DENOMINATOR } from './consts';
 export async function calcTokenFees({
     bridge,
     amountWithFee,
-    integrator,
-    initChainID
+    integrator
 }: {
     bridge: OnlySourceFunctionality | WithDestinationFunctionality;
     amountWithFee: BigNumber;
     integrator?: string;
-    initChainID?: BigNumberish;
 }): Promise<{
     amountWithoutFee: BigNumber;
     feeAmount: BigNumber;
