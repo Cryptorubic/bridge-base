@@ -178,20 +178,33 @@ describe('TestOnlySource', () => {
         });
         it('only manager can remove routers', async () => {
             await expect(
-                bridge.connect(swapper).removeAvailableRouter(DEX.address)
+                bridge.connect(swapper).removeAvailableRouters([DEX.address])
             ).to.be.revertedWith('NotAManager()');
 
-            await bridge.removeAvailableRouter(DEX.address);
+            await bridge.removeAvailableRouters([DEX.address]);
             expect(await bridge.getAvailableRouters()).to.be.deep.eq([]);
         });
         it('only manager can add routers', async () => {
             await expect(
-                bridge.connect(swapper).addAvailableRouter(owner.address)
+                bridge.connect(swapper).addAvailableRouters([owner.address])
             ).to.be.revertedWith('NotAManager()');
 
-            await bridge.addAvailableRouter(owner.address);
+            await bridge.addAvailableRouters([owner.address]);
 
             expect(await bridge.getAvailableRouters()).to.be.deep.eq([DEX.address, owner.address]);
+        });
+        it('possible to add multiple routers', async () => {
+            await bridge.addAvailableRouters([swapper.address, owner.address]);
+            expect(await bridge.getAvailableRouters()).to.be.deep.eq([
+                DEX.address,
+                swapper.address,
+                owner.address
+            ]);
+        });
+        it.only('possible to remove multiple routers', async () => {
+            await bridge.addAvailableRouters([swapper.address, owner.address]);
+            await bridge.removeAvailableRouters([DEX.address, owner.address]);
+            expect(await bridge.getAvailableRouters()).to.be.deep.eq([swapper.address]);
         });
         it('validation of integratorFeeInfo', async () => {
             let feeInfo = {
