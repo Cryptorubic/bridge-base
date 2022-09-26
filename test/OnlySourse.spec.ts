@@ -7,6 +7,7 @@ import * as consts from './shared/consts';
 import { onlySourceFixture } from './shared/fixtures';
 import { calcCryptoFees, calcTokenFees } from './shared/utils';
 import { balance } from '@openzeppelin/test-helpers';
+import { DEFAULT_PROVIDER_NAME } from './shared/consts';
 
 const createFixtureLoader = waffle.createFixtureLoader;
 
@@ -52,6 +53,7 @@ describe('TestOnlySource', () => {
                 dstChainID,
                 router
             },
+            DEFAULT_PROVIDER_NAME,
             { value: value }
         );
     }
@@ -236,6 +238,23 @@ describe('TestOnlySource', () => {
 
             await swapToken.transfer(swapper.address, ethers.utils.parseEther('10'));
             await swapToken.connect(swapper).approve(bridge.address, ethers.constants.MaxUint256);
+        });
+        it('check event', async () => {
+            await expect(callBridge())
+                .to.emit(bridge, 'RequestSent')
+                .withArgs(
+                    [
+                        swapToken.address,
+                        consts.DEFAULT_AMOUNT_IN,
+                        228,
+                        transitToken.address,
+                        consts.MIN_TOKEN_AMOUNT,
+                        owner.address,
+                        ethers.constants.AddressZero,
+                        DEX.address
+                    ],
+                    DEFAULT_PROVIDER_NAME
+                );
         });
         it('cross chain with swap fails if router not available', async () => {
             await expect(callBridge({ router: owner.address })).to.be.revertedWith(
