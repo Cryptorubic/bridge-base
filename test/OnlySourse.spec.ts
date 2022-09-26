@@ -201,7 +201,7 @@ describe('TestOnlySource', () => {
                 owner.address
             ]);
         });
-        it.only('possible to remove multiple routers', async () => {
+        it('possible to remove multiple routers', async () => {
             await bridge.addAvailableRouters([swapper.address, owner.address]);
             await bridge.removeAvailableRouters([DEX.address, owner.address]);
             expect(await bridge.getAvailableRouters()).to.be.deep.eq([swapper.address]);
