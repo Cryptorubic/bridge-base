@@ -118,5 +118,4 @@ contract WithDestinationFunctionality is BridgeBase {
             revert NotARelayer();
         }
     }
-
 }

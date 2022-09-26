@@ -42,12 +42,12 @@ contract TestOnlySource is OnlySourceFunctionality {
         );
     }
 
-    function crossChainWithSwap(BaseCrossChainParams calldata _params)
+    function crossChainWithSwap(BaseCrossChainParams calldata _params, string calldata _providerName)
         external
         payable
         nonReentrant
         whenNotPaused
-        eventEmitter(_params)
+        eventEmitter(_params, _providerName)
     {
         if (!availableRouters.contains(_params.router)) {
             revert NotInWhitelist(_params.router);

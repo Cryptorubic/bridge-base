@@ -144,7 +144,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
             _fixedCryptoFee = uint256(_info.fixedFeeAmount);
 
             if (_fixedCryptoFee > 0) {
-               _RubicPart = (_fixedCryptoFee * _info.RubicFixedCryptoShare) / DENOMINATOR;
+                _RubicPart = (_fixedCryptoFee * _info.RubicFixedCryptoShare) / DENOMINATOR;
 
                 availableIntegratorCryptoFee[_integrator] += _fixedCryptoFee - _RubicPart;
             }
@@ -362,24 +362,37 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
     }
 
     /**
-     * @dev Appends new available router
-     * @param _router Router's address to add
+     * @dev Appends new available routers
+     * @param _routers Routers addresses to add
      */
-    function addAvailableRouter(address _router) external onlyManagerOrAdmin {
-        if (_router == address(0)) {
-            revert ZeroAddress();
+    function addAvailableRouters(address[] memory _routers) external onlyManagerOrAdmin {
+        uint256 length = _routers.length;
+        for (uint256 i; i < length; ) {
+            address _router = _routers[i];
+            if (_router == address(0)) {
+                revert ZeroAddress();
+            }
+            // Check that router exists is performed inside the library
+            availableRouters.add(_router);
+            unchecked {
+                ++i;
+            }
         }
-        // Check that router exists is performed inside the library
-        availableRouters.add(_router);
     }
 
     /**
-     * @dev Removes existing available router
-     * @param _router Router's address to remove
+     * @dev Removes existing available routers
+     * @param _routers Routers addresses to remove
      */
-    function removeAvailableRouter(address _router) external onlyManagerOrAdmin {
-        // Check that router exists is performed inside the library
-        availableRouters.remove(_router);
+    function removeAvailableRouters(address[] memory _routers) external onlyManagerOrAdmin {
+        uint256 length = _routers.length;
+        for (uint256 i; i < length; ) {
+            // Check that router exists is performed inside the library
+            availableRouters.remove(_routers[i]);
+            unchecked {
+                ++i;
+            }
+        }
     }
 
     /**

@@ -5,11 +5,11 @@ pragma solidity ^0.8.4;
 import '../BridgeBase.sol';
 
 contract OnlySourceFunctionality is BridgeBase {
-    event RequestSent(BaseCrossChainParams parameters);
+    event RequestSent(BaseCrossChainParams parameters, string providerName);
 
-    modifier eventEmitter(BaseCrossChainParams calldata _params) {
+    modifier eventEmitter(BaseCrossChainParams calldata _params, string calldata _providerName) {
         _;
-        emit RequestSent(_params);
+        emit RequestSent(_params, _providerName);
     }
 
     function __OnlySourceFunctionalityInit(

@@ -7,3 +7,4 @@ export const FIXED_CRYPTO_FEE = BigNumber.from(ethers.utils.parseEther('1'));
 export const MIN_TOKEN_AMOUNT = BigNumber.from('1' + '0'.repeat(17));
 export const MAX_TOKEN_AMOUNT = BigNumber.from(ethers.utils.parseEther('10'));
 export const DEFAULT_AMOUNT_IN = BigNumber.from(ethers.utils.parseEther('1'));
+export const DEFAULT_PROVIDER_NAME = 'keker:boroff';
