@@ -144,7 +144,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
             _fixedCryptoFee = uint256(_info.fixedFeeAmount);
 
             if (_fixedCryptoFee > 0) {
-               _RubicPart = (_fixedCryptoFee * _info.RubicFixedCryptoShare) / DENOMINATOR;
+                _RubicPart = (_fixedCryptoFee * _info.RubicFixedCryptoShare) / DENOMINATOR;
 
                 availableIntegratorCryptoFee[_integrator] += _fixedCryptoFee - _RubicPart;
             }
@@ -366,8 +366,8 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
      * @param _routers Routers addresses to add
      */
     function addAvailableRouters(address[] memory _routers) external onlyManagerOrAdmin {
-        uint length = _routers.length;
-        for(uint i; i < length;){
+        uint256 length = _routers.length;
+        for (uint256 i; i < length; ) {
             address _router = _routers[i];
             if (_router == address(0)) {
                 revert ZeroAddress();
@@ -385,8 +385,8 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
      * @param _routers Routers addresses to remove
      */
     function removeAvailableRouters(address[] memory _routers) external onlyManagerOrAdmin {
-        uint length = _routers.length;
-        for(uint i; i < length;){
+        uint256 length = _routers.length;
+        for (uint256 i; i < length; ) {
             // Check that router exists is performed inside the library
             availableRouters.remove(_routers[i]);
             unchecked {
