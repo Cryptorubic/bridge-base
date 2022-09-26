@@ -367,13 +367,16 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
      */
     function addAvailableRouters(address[] memory _routers) external onlyManagerOrAdmin {
         uint length = _routers.length;
-        for(uint i; i < length; i++){
+        for(uint i; i < length;){
             address _router = _routers[i];
             if (_router == address(0)) {
                 revert ZeroAddress();
             }
             // Check that router exists is performed inside the library
             availableRouters.add(_router);
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -383,9 +386,12 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
      */
     function removeAvailableRouters(address[] memory _routers) external onlyManagerOrAdmin {
         uint length = _routers.length;
-        for(uint i; i < length; i++){
+        for(uint i; i < length;){
             // Check that router exists is performed inside the library
             availableRouters.remove(_routers[i]);
+            unchecked {
+                ++i;
+            }
         }
     }
 
