@@ -245,6 +245,37 @@ uint256 public RubicPlatformFee;
 mapping(uint256 => uint256) public blockchainToRubicPlatformFee;
 ```
 
+##### Ивенты
+В функциях используется модификатор:
+```solidity
+modifier eventEmitter(BaseCrossChainParams calldata _params, string calldata _providerName) {
+```
+Первый параметр - все переменные для свапа, а также дполонительные для статистики, дебага.
+```solidity
+    struct BaseCrossChainParams {
+        address srcInputToken;
+        uint256 srcInputAmount;
+        uint256 dstChainID;
+        address dstOutputToken;
+        uint256 dstMinOutputAmount;
+        address recipient;
+        address integrator;
+        address router;
+    }
+```
+Второй параметр - строка с информацией о провайдере.
+```Solidity
+string calldata _providerName
+```
+
+Предполагаемый формат:
+
+```
+LiFi:Celer
+Rango:Hyphen
+Native:Celer
+```
+Native - нативная интеграция.
 
 ##### Паузы
 
