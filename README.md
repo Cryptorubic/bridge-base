@@ -1,36 +1,36 @@
 # Rubic Bridge Base
 [![NPM Package](https://img.shields.io/npm/v/rubic-bridge-base)](https://www.npmjs.com/package/rubic-bridge-base)
 
-**Пакет для разработки самостоятельных и интеграционных кросс-чейн бриджей**
+**The package for the development of independent and integrative cross-chain bridges**
 
-Содержит базовый функционал, такой как:
-* Управление ролями
-* Расчеты комиссий
-* Трекинг статусов транзакций
-* Пауза
-* Реализация базовой конфигурации
+Contains basic functionality such as:
+* Role Management
+* Commission Calculations
+* Tracking transaction statuses
+* Pause
+* Implementation of a basic configuration
 
-## Обзор
+## Overview
 
-### Установка
+### Installation
 
 ```console
 $ npm install rubic-bridge-base
 ```
 
-### Интеграция
+### Integration
 
-##### Виды бриджей
+##### Types of Bridges
 
-Предлагается два варианта основы для бриджей:
-1) С функционалом только в исходной сети - [OnlySourceFunctionality](contracts/architecture/OnlySourceFunctionality.sol)
-2) С функционалом в исходной и целевой сетях (с релеерами) - [WithDestinationFunctionality](contracts/architecture/WithDestinationFunctionality.sol)
+There are two options for bridge’s base
+1) Only Source Network Functionality - [OnlySourceFunctionality](contracts/architecture/OnlySourceFunctionality.sol)
+2) Source and Destination Network Functionality (with Relayers) - [WithDestinationFunctionality](contracts/architecture/WithDestinationFunctionality.sol)
 
 ##### Upgradeable/Non-Upgradeable
 
-Пакет реализован с помощью **OpenZeppelin-Upgradeable**, поэтому его можно использовать для создания Upgradeable бриджей.
+The package is implemented through OpenZeppelin-Upgradeable, and it can be used for creating Upgradeable bridges.
 
-_Пример использования для Upgradeable_:
+_Use case for Upgradeable_:
 
 ```solidity
 import 'rubic-bridge-base/contracts/architecture/OnlySourceFunctionality.sol';
@@ -44,7 +44,7 @@ contract RubicBridge is OnlySourceFunctionality{
         uint256[] memory _minTokenAmounts,
         uint256[] memory _maxTokenAmounts,
         uint256 _RubicPlatformFee
-        // Дополнительные параметры...
+        // Additional Parameters...
     ) external initializer { // notice: EXTERNAL
         __OnlySourceFunctionalityInit(
             _fixedCryptoFee,
@@ -55,12 +55,12 @@ contract RubicBridge is OnlySourceFunctionality{
             _RubicPlatformFee
         );
         
-        // Дополнительная логика...
+        // Additional Logic...
     }
 }
 ```
 
-_Пример использования для Non-Upgradeable_:
+_Use case for Non-Upgradeable_:
 
 ```solidity
 import 'rubic-bridge-base/contracts/tokens/MultipleTransitToken.sol';
@@ -74,7 +74,7 @@ contract SwapBase is MultipleTransitToken {
         uint256[] memory _minTokenAmounts,
         uint256[] memory _maxTokenAmounts,
         uint256 _RubicPlatformFee
-        // Дополнительные параметры...
+        // Additional Parameters...
     ) {
         initialize(
             _fixedCryptoFee,
@@ -85,7 +85,7 @@ contract SwapBase is MultipleTransitToken {
             _RubicPlatformFee
         );
         
-        // Дополнительная логика...
+        // Additional Logic...
     }
 
     function initialize(
@@ -108,7 +108,7 @@ contract SwapBase is MultipleTransitToken {
 }
 ```
 
-При реализации функции исходного свапа с использованием OnlySourceFunctionality необходимо снять FixedCryptoFee и TokenFee это делается с помощью функций:
+When implementing the source swap function using OnlySourceFunctionality, it’s necessary to remove FixedCryptoFee and TokenFee by using the functions:
 
 ```solidity
 /**
@@ -138,70 +138,70 @@ function accrueTokenFees(
  )
 ```
 
-### Описание
+### Overview
 
-##### Роли
+##### Roles
 
-При инициализации контракта деплоеру выдается исключительно роль DEFAULT_ADMIN_ROLE. 
-При необходимости наличия дополнительных ролей их следует добавлять, либо в функцию initialize, либо в constructor.
-В зависимости от Upgradeability.
+When the contract is initialized, the deployer is given only the DEFAULT_ADMIN_ROLE role.
+If additional roles are needed, they should be added either to the 'initialize' function or to the constructor.
+Depending on the Upgradeability.
 
-Присутствуют следующие роли:
+There are the following roles:
 1) DEFAULT_ADMIN_ROLE:
-   * Доступные модификаторы: onlyAdmin, onlyManagerAndAdmin
+   * Available modifiers: onlyAdmin, onlyManagerAndAdmin
 2) MANAGER_ROLE:
-   * Доступные модификаторы: onlyManagerAndAdmin
+   * Available modifiers: onlyManagerAndAdmin
 
-В контракте WithDestinationFunctionality также присутствует роль:
+There is also a role in WithDestinationFunctionality contract:
 1) RELAYER_ROLE:
-   * Доступные модификаторы: onlyRelayer
+   * Available modifiers: onlyRelayer
 
-##### Комиссии
+##### Fees
 
-В базовом контракте представлена основа реализации различных комиссий, например, несколько объявленных переменных и функции. 
-Однако логику использования этих переменных и функций необходимо реализовывать самостоятельно в наследующем контракте
+The basic contract provides the basis for the implementation of various fees, for example, several declared variables and functions.
+However, the logic of using these variables and functions must be implemented independently in the inheriting contract.
 
-База позволяет выставить уникальные комиссии каждому интегратору протокола Rubic. А именно с помощью следующих параметров:
+The database allows to set unique commissions for each integrator of the Rubic protocol, using the following parameters:
 
-* isIntegrator (bool) - true, если интегратор активный.
-* tokenFee (uint) - комиссия в токенах, оплачиваемая юзером
-* RubicTokenShare (uint) - процент от tokenFee, принадлежащий Rubic <br>
-То есть RubicFeeAmount = TokenAmount * (tokenFee / 1e6) * (RubicTokenShare / 1e6)
-* RubicFixedCryptoShare (uint) - процент от fixedFeeAmount, принадлежащий Rubic
-* fixedFeeAmount (uint) - комиссия в нативном токене фиксированного размера
+* isIntegrator (bool) - true, if integrator is active.
+* tokenFee (uint) - fees in tokens payed by a user
+* RubicTokenShare (uint) - percentage of tokenFee owned by Rubic <br>
+Meaning, RubicFeeAmount = TokenAmount * (tokenFee / 1e6) * (RubicTokenShare / 1e6)
+* RubicFixedCryptoShare (uint) - percentage of fixedFeeAmount owned by Rubic
+* fixedFeeAmount (uint) - fixed fee amount in a native token 
 
-Параметры выставляются с помощью функции:
+Parameters are set using the function:
 
 ```solidity
 function setIntegratorInfo(address _integrator, IntegratorFeeInfo memory _info) external onlyManagerAndAdmin;
 ```
 
-Комиссии интегратора снимаются с помощью двух функций:
+Integrator's fees are removed using two functions:
 
-**Для снятия комиссий в нативном токене необходимо указать нулевой адрес**
+**To withdraw commissions in a native token, you must provide a null address**
 
-1) Функция для снятия от лица интегратора
+1) Function for removal on behalf of the integrator
 
 ```solidity
 function collectIntegratorFee(address _token) external
 ```
 
-2) Функция для снятия от лица менеджера
+2) Function for withdrawal on behalf of the manager
 
 ```solidity
 function collectIntegratorFee(address _integrator, address _token) external onlyManagerAndAdmin
 ```
 
-Комиссии всё равно будут направлены на адрес интегратора
+Fees will still be sent to the integrator's address
 
-При указании нулевого адреса будут сняты как и tokenFee в нативном токене, так и fixedCryptoFee
+When specifying a null address, both tokenFee in the native token and fixedCryptoFee will be removed
 
 _FixedCryptoFee_
 
-FixedCryptoFee - это комиссия фиксированного размера, снимаемая в исходной сети. 
-Есть возможность выставить уникальную FixedCryptoFee для каждого интегратора и процент от этой комиссии, собираемый командой Rubic
+FixedCryptoFee is a fixed fee charged on the source network.
+It is possible to set a unique FixedCryptoFee for each integrator and a percentage of the fee collected by the Rubic team
 
-При проведении транзакции напрямую через платформу Rubic, то есть без указания интегратора, используется стандартная FixedCryptoFee
+When conducting a transaction directly through the Rubic platform, without specifying an integrator, the standard FixedCryptoFee is used
 
 ```solidity
 // Rubic fixed fee for swap
@@ -210,19 +210,19 @@ uint256 public fixedCryptoFee;
 uint256 public collectedCryptoFee;
 ```
 
-Установка данного параметра возможна во время инициализации через параметр
+Setting this parameter is possible during initialization through the parameter
 
 ```solidity
 uint256 _fixedCryptoFee,
 ```
 
-А так же с помощью функции
+And through the function
 
 ```solidity
 function setFixedCryptoFee(uint256 _fixedCryptoFee) external onlyManagerAndAdmin
 ```
 
-Снятие для команды Rubic происходит через 
+Withdrawal for the Rubik team is implemented through
 
 ```solidity
 function collectRubicCryptoFee() external onlyManagerAndAdmin
@@ -230,27 +230,27 @@ function collectRubicCryptoFee() external onlyManagerAndAdmin
 
 TokenFee
 
-TokenFee - комиссия в процентах собираемая от количества токенов.
+TokenFee - fees collected as a percentage from the amount of tokens.
 
-Если интегратор указан, то использоуется соответствующая ему TokenFee, иначе:
+If an integrator is specified, then the corresponding TokenFee is used, otherwise:
 
-1) При использовании OnlySourceFunctionality:
+1) When using OnlySourceFunctionality:
 ```solidity
 uint256 public RubicPlatformFee;
 ```
-2) При использовании WithDestinationFunctionality:
+2) When using WithDestinationFunctionality:
 
-Для более гибкой Rubic fee есть возможность указать комиссию в зависимости от исходного блокчейна если используется WithDestinationFunctionality:
+For a more flexible Rubic fee, it is possible to specify a fee depending on the source blockchain if WithDestinationFunctionality is used:
 ```solidity
 mapping(uint256 => uint256) public blockchainToRubicPlatformFee;
 ```
 
-##### Ивенты
-В функциях используется модификатор:
+##### Events
+The functions use the modifier:
 ```solidity
-modifier eventEmitter(BaseCrossChainParams calldata _params, string calldata _providerName) {
+modifier EventEmitter(BaseCrossChainParams calldata _params, string calldata _providerName) {
 ```
-Первый параметр - все переменные для свапа, а также дполонительные для статистики, дебага.
+The first parameter is all the variables for swap and the additional ones for statistics and debug.
 ```solidity
     struct BaseCrossChainParams {
         address srcInputToken;
@@ -263,24 +263,24 @@ modifier eventEmitter(BaseCrossChainParams calldata _params, string calldata _pr
         address router;
     }
 ```
-Второй параметр - строка с информацией о провайдере.
+The second parameter is a line with information about the provider.
 ```Solidity
 string calldata _providerName
 ```
 
-Предполагаемый формат:
+Intended format:
 
 ```
 LiFi:Celer
 Rango:Hyphen
 Native:Celer
 ```
-Native - нативная интеграция.
+Native - native integration.
 
-##### Паузы
+##### Pauses
 
-В пакете также представлены функции для паузы и анпаузы работы бриджа.
-Модификаторы необходимо использовать на те фукнции, которые должны быть заблокированы при паузе
+The package also provides functions for pausing and resuming the bridge work.
+Modifiers should be used with the functions that are to be blocked when paused
 
 ```solidity
  function pauseExecution() external onlyManagerAndAdmin { 
@@ -292,21 +292,21 @@ Native - нативная интеграция.
  }
 ```
 
-##### Статусы транзакций
+##### Transaction Status
 
-Статусы транзакций хранятся в маппинге
+Transaction Statuses are kept in mapping
 
 ```solidity
 mapping(bytes32 => SwapStatus) public processedTransactions;
 ```
 
-Пример использования:
+Use case:
 
 ```solidity
 processedTransactions[_id] = SwapStatus.Fallback;
 ```
 
-Реализованные статусы:
+Implemented Statuses:
 
 ```solidity
 enum SwapStatus {
@@ -317,7 +317,7 @@ enum SwapStatus {
  }
 ```
 
-Также имеется функция для замены статуса транзакции с помощью external вызова
+There is also a function that replaces the transaction status with an external call
 
 ```solidity
 function changeTxStatus(
@@ -326,20 +326,20 @@ function changeTxStatus(
 ) external onlyRelayer
 ```
 
-При этом запрещается:
-* Устанавливать статус Null
-* Изменять статус с Success и Fallback
+And it is prohibited:
+* To set the Null status
+* To change status with Success and Fallback
 
-##### Разрешенные роутеры
+##### Allowed Routers
 
-Для возможности создания бриджей со свапами на различных DEX представлена
-основа для реализации логики поддерживаемых DEXов
+For the possibility of creating bridges with swaps on various DEXs, there is a
+basis for implementing the logic of supported DEXs 
 
 ```solidity
 EnumerableSetUpgradeable.AddressSet internal availableRouters;
 ```
 
-Пример использования:
+Use Case:
 
 ```solidity
 if (!availableRouters.contains(dex)) {
@@ -347,49 +347,49 @@ if (!availableRouters.contains(dex)) {
 }
 ```
 
-Также для удобного просмотра поддерживаемых роутеров существует view external функция
+Also, for a convenient browse of the supported routers, there is a view external function
 
 ```solidity
 function getAvailableRouters() external view returns(address[] memory)
 ```
 
-Для добавления роутера подразумевается использование следующей функции:
+Use the following function to add a router:
 
 ```solidity
 function addAvailableRouter(address _router) external onlyManagerAndAdmin
 ```
 
-Также роутеры можно добавить во время инициализации
+Routers can also be added during initialization
 
 ```solidity
 address[] memory _routers
 ```
 
-##### Остальное
+##### Other
 
 _Min Max Amounts_
 
-Представлена возможность ограничения максимальных и минимальных сумм
+There is a possibility of limiting the maximum and minimum amounts
 
-Для SingleTransitToken:
+For SingleTransitToken:
 
-Во время инициализации:
+While initialization:
 
 ```solidity
 uint256 _minTokenAmount,
 uint256 _maxTokenAmount,
 ```
 
-Или же через external функции:
+Or through external functions:
 
 ```solidity
 function setMinTokenAmount(uint256 _minTokenAmount)
 function setMaxTokenAmount(uint256 _maxTokenAmount)
 ```
 
-Для MultipleTransitToken:
+For MultipleTransitToken:
 
-Во время инициализации:
+While initialization:
 
 ```solidity
 address[] memory _tokens,
@@ -397,7 +397,7 @@ uint256[] memory _minTokenAmounts,
 uint256[] memory _maxTokenAmounts,
 ```
 
-Или через external функции:
+Or through external functions:
 
 ```solidity
 function setMinTokenAmount(address _token, uint256 _minTokenAmount)
@@ -408,9 +408,9 @@ function setMinTokenAmount(address _token, uint256 _minTokenAmount)
      onlyManagerAndAdmin
 ```
 
-_Функция для отправки токенов_
+_ Function for sending tokens_
 
-Представлена функция для отправки нативных токенов и ERC-20 с возможностью перезаписи
+There is a function for sending native tokens and ERC-20 with the rewriting option
 
 ```solidity
 function _sendToken(
@@ -420,12 +420,11 @@ function _sendToken(
  ) internal virtual
 ```
 
-_Апрувы на роутеры_
+_Approves for Routers_
 
-Поскольку может использоваться неограниченное количество токенов для обменов на DEX,
-каждый из них необходимо апрувать на роутер.
-Для этого в пакете реализована функция _smartApprove, которая увеличивает аллованс
-определенного токена на максимум, если текущего аллованса не хватает.
+Since an unlimited number of tokens for exchanging can be used on DEX,
+each of them must be approved by the router.
+That's why the package implements the _smartApprove function, which increases the allowance of a certain token to the maximum if the current allowance is not enough.
 
 ```solidity
 function smartApprove(
