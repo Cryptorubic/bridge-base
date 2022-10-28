@@ -54,6 +54,58 @@ export async function calcTokenFees({
     return { feeAmount, RubicFee, integratorFee, amountWithoutFee };
 }
 
+export async function calcTokenFeesFromUser({
+    bridge,
+    amountWithoutFee,
+    integrator
+}: {
+    bridge: BridgeBase;
+    amountWithoutFee: BigNumber;
+    integrator?: string;
+}): Promise<{
+    amountWithFee: BigNumber;
+    feeAmount: BigNumber;
+    RubicFee: BigNumber;
+    integratorFee: BigNumber;
+}> {
+    let feeAmount;
+    let RubicFee;
+    let integratorFee;
+    let amountWithFee;
+
+    if (integrator !== undefined) {
+        const feeInfo = await bridge.integratorToFeeInfo(integrator);
+        if (feeInfo.isIntegrator) {
+            amountWithFee = amountWithoutFee
+                .mul(DENOMINATOR)
+                .div(DENOMINATOR.sub(feeInfo.tokenFee));
+            feeAmount = amountWithFee.mul(feeInfo.tokenFee).div(DENOMINATOR);
+            RubicFee = feeAmount.mul(feeInfo.RubicTokenShare).div(DENOMINATOR);
+            integratorFee = feeAmount.sub(RubicFee);
+        } else {
+            console.log('WARNING: integrator is not active');
+
+            const fee = await bridge.RubicPlatformFee();
+
+            amountWithFee = amountWithoutFee.mul(DENOMINATOR).div(DENOMINATOR.sub(fee));
+
+            feeAmount = amountWithFee.mul(fee).div(DENOMINATOR);
+            RubicFee = feeAmount;
+        }
+    } else {
+        const fee = await bridge.RubicPlatformFee();
+
+        amountWithFee = amountWithoutFee.mul(DENOMINATOR).div(DENOMINATOR.sub(fee));
+
+        feeAmount = amountWithFee.mul(fee).div(DENOMINATOR);
+        RubicFee = feeAmount;
+    }
+
+    //console.log(feeAmount, RubicFee, integratorFee, amountWithoutFee)
+
+    return { feeAmount, RubicFee, integratorFee, amountWithFee };
+}
+
 export async function calcCryptoFees({
     bridge,
     integrator,
