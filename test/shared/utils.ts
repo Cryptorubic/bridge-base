@@ -1,4 +1,8 @@
-import { OnlySourceFunctionality, WithDestinationFunctionality } from '../../typechain-types';
+import {
+    OnlySourceFunctionality,
+    WithDestinationFunctionality,
+    BridgeBase
+} from '../../typechain-types';
 import { BigNumber, BigNumberish } from 'ethers';
 import { DENOMINATOR } from './consts';
 
@@ -7,7 +11,7 @@ export async function calcTokenFees({
     amountWithFee,
     integrator
 }: {
-    bridge: OnlySourceFunctionality | WithDestinationFunctionality;
+    bridge: BridgeBase;
     amountWithFee: BigNumber;
     integrator?: string;
 }): Promise<{
@@ -55,7 +59,7 @@ export async function calcCryptoFees({
     integrator,
     dstChainID
 }: {
-    bridge: OnlySourceFunctionality | WithDestinationFunctionality;
+    bridge: BridgeBase | OnlySourceFunctionality | WithDestinationFunctionality;
     integrator?: string;
     dstChainID?: BigNumberish;
 }): Promise<{
