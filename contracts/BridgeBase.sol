@@ -44,6 +44,9 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
     // Collected rubic fees in native token
     uint256 public availableRubicCryptoFee;
 
+    // Used for admin transferring
+    mapping(address => address) public adminShifter;
+
     // AddressSet of whitelisted addresses
     EnumerableSetUpgradeable.AddressSet internal availableRouters;
 
@@ -52,6 +55,8 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
     event TokenFee(uint256 RubicPart, uint256 integratorPart, address indexed integrator, address token);
     event IntegratorTokenFeeCollected(uint256 amount, address indexed integrator, address token);
     event RubicTokenFeeCollected(uint256 amount, address token);
+    event InitAdminTransfer(address admintShifter, address newAdmin);
+    event AcceptAdmin(address adminShifter, address newAdmin);
 
     struct IntegratorFeeInfo {
         bool isIntegrator; // flag for setting 0 fees for integrator      - 1 byte
@@ -400,8 +405,21 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
      * @param _newAdmin New admin's address
      */
     function transferAdmin(address _newAdmin) external onlyAdmin {
-        _revokeRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(DEFAULT_ADMIN_ROLE, _newAdmin);
+        adminShifter[_newAdmin] = msg.sender;
+
+        emit InitAdminTransfer(msg.sender, _newAdmin);
+    }
+
+    function acceptAdmin() external {
+        address _shifter = adminShifter[msg.sender];
+        if (_shifter == address(0)) revert AdminNotShifted();
+
+        _revokeRole(DEFAULT_ADMIN_ROLE, _shifter);
+        adminShifter[msg.sender] = address(0);
+
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+
+        emit AcceptAdmin(_shifter, msg.sender);
     }
 
     /// VIEW FUNCTIONS ///

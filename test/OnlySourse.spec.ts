@@ -243,6 +243,25 @@ describe('TestOnlySource', () => {
                 bridge.setIntegratorInfo(integratorWallet.address, feeInfo)
             ).to.be.revertedWith('ShareTooHigh()');
         });
+        it.only('admin transfer and accept', async () => {
+            await expect(bridge.transferAdmin(swapper.address))
+                .to.emit(bridge, 'InitAdminTransfer')
+                .withArgs(owner.address, swapper.address);
+
+            await expect(bridge.connect(swapper).acceptAdmin())
+                .to.emit(bridge, 'AcceptAdmin')
+                .withArgs(owner.address, swapper.address);
+
+            // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+            expect(await bridge.hasRole(await bridge.DEFAULT_ADMIN_ROLE(), owner.address)).to.be
+                .false;
+
+            // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+            expect(await bridge.hasRole(await bridge.DEFAULT_ADMIN_ROLE(), swapper.address)).to.be
+                .true;
+
+            await expect(bridge.transferAdmin(manager.address)).to.be.revertedWith('NotAnAdmin()');
+        });
     });
 
     describe('cross chain tests', () => {
