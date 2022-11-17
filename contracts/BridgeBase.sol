@@ -44,8 +44,10 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
     // Collected rubic fees in native token
     uint256 public availableRubicCryptoFee;
 
-    // Used for admin transferring
-    mapping(address => address) public adminShifter;
+    // Pending admin in transfer process
+    address private pendingAdmin;
+    // Admin who transfers its role
+    address private previousAdmin;
 
     // AddressSet of whitelisted addresses
     EnumerableSetUpgradeable.AddressSet internal availableRouters;
@@ -405,21 +407,22 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
      * @param _newAdmin New admin's address
      */
     function transferAdmin(address _newAdmin) external onlyAdmin {
-        adminShifter[_newAdmin] = msg.sender;
+        pendingAdmin = _newAdmin;
+        previousAdmin = msg.sender;
 
         emit InitAdminTransfer(msg.sender, _newAdmin);
     }
 
     function acceptAdmin() external {
-        address _shifter = adminShifter[msg.sender];
-        if (_shifter == address(0)) revert AdminNotShifted();
+        if (pendingAdmin != msg.sender) revert NotPendingAdmin();
 
-        _revokeRole(DEFAULT_ADMIN_ROLE, _shifter);
-        adminShifter[msg.sender] = address(0);
-
+        _revokeRole(DEFAULT_ADMIN_ROLE, previousAdmin);
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
 
-        emit AcceptAdmin(_shifter, msg.sender);
+        emit AcceptAdmin(previousAdmin, msg.sender);
+
+        pendingAdmin = address(0);
+        previousAdmin = address(0);
     }
 
     /// VIEW FUNCTIONS ///
