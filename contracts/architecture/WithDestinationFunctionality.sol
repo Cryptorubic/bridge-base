@@ -31,7 +31,6 @@ contract WithDestinationFunctionality is BridgeBase {
     function __WithDestinationFunctionalityInit(
         uint256 _fixedCryptoFee,
         uint256 _RubicPlatformFee,
-        address[] memory _routers,
         address[] memory _tokens,
         uint256[] memory _minTokenAmounts,
         uint256[] memory _maxTokenAmounts,
@@ -39,7 +38,7 @@ contract WithDestinationFunctionality is BridgeBase {
         uint256[] memory _blockchainToGasFee,
         address _admin
     ) internal onlyInitializing {
-        __BridgeBaseInit(_fixedCryptoFee, _RubicPlatformFee, _routers, _tokens, _minTokenAmounts, _maxTokenAmounts, _admin);
+        __BridgeBaseInit(_fixedCryptoFee, _RubicPlatformFee, _tokens, _minTokenAmounts, _maxTokenAmounts, _admin);
 
         uint256 length = _blockchainIDs.length;
         if (_blockchainToGasFee.length != length) {

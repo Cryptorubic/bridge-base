@@ -51,9 +51,6 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
     // Admin who transfers its role
     address private previousAdmin;
 
-    // AddressSet of whitelisted addresses
-    EnumerableSetUpgradeable.AddressSet internal availableRouters;
-
     event FixedCryptoFee(uint256 RubicPart, uint256 integratorPart, address indexed integrator);
     event FixedCryptoFeeCollected(uint256 amount, address collector);
     event TokenFee(uint256 RubicPart, uint256 integratorPart, address indexed integrator, address token);
@@ -102,7 +99,6 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
     function __BridgeBaseInit(
         uint256 _fixedCryptoFee,
         uint256 _RubicPlatformFee,
-        address[] memory _routers,
         address[] memory _tokens,
         uint256[] memory _minTokenAmounts,
         uint256[] memory _maxTokenAmounts,
@@ -121,14 +117,6 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
         }
 
         RubicPlatformFee = _RubicPlatformFee;
-
-        uint256 routerLength = _routers.length;
-        for (uint256 i; i < routerLength; ) {
-            availableRouters.add(_routers[i]);
-            unchecked {
-                ++i;
-            }
-        }
 
         uint256 tokensLength = _tokens.length;
         for (uint256 i; i < tokensLength; ) {
@@ -405,40 +393,6 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
     }
 
     /**
-     * @dev Appends new available routers
-     * @param _routers Routers addresses to add
-     */
-    function addAvailableRouters(address[] memory _routers) external onlyManagerOrAdmin {
-        uint256 length = _routers.length;
-        for (uint256 i; i < length; ) {
-            address _router = _routers[i];
-            if (_router == address(0)) {
-                revert ZeroAddress();
-            }
-            // Check that router exists is performed inside the library
-            availableRouters.add(_router);
-            unchecked {
-                ++i;
-            }
-        }
-    }
-
-    /**
-     * @dev Removes existing available routers
-     * @param _routers Routers addresses to remove
-     */
-    function removeAvailableRouters(address[] memory _routers) external onlyManagerOrAdmin {
-        uint256 length = _routers.length;
-        for (uint256 i; i < length; ) {
-            // Check that router exists is performed inside the library
-            availableRouters.remove(_routers[i]);
-            unchecked {
-                ++i;
-            }
-        }
-    }
-
-    /**
      * @dev Transfers admin role
      * @param _newAdmin New admin's address
      */
@@ -462,13 +416,6 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
     }
 
     /// VIEW FUNCTIONS ///
-
-    /**
-     * @return Available routers
-     */
-    function getAvailableRouters() external view returns (address[] memory) {
-        return availableRouters.values();
-    }
 
     /**
      * @notice Used in modifiers

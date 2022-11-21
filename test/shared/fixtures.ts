@@ -40,7 +40,6 @@ export const onlySourceFixture = async function (): Promise<BridgeFixture> {
     const bridge = (await bridgeFactory.deploy(
         FIXED_CRYPTO_FEE,
         RUBIC_PLATFORM_FEE,
-        [DEX.address],
         [transitToken.address, swapToken.address],
         [MIN_TOKEN_AMOUNT, MIN_TOKEN_AMOUNT],
         [MAX_TOKEN_AMOUNT, MAX_TOKEN_AMOUNT],

@@ -16,19 +16,17 @@ contract TestOnlySource is OnlySourceFunctionality {
     constructor(
         uint256 _fixedCryptoFee,
         uint256 _RubicPlatformFee,
-        address[] memory _routers,
         address[] memory _tokens,
         uint256[] memory _minTokenAmounts,
         uint256[] memory _maxTokenAmounts,
         address _admin
     ) {
-        initialize(_fixedCryptoFee, _RubicPlatformFee, _routers, _tokens, _minTokenAmounts, _maxTokenAmounts, _admin);
+        initialize(_fixedCryptoFee, _RubicPlatformFee, _tokens, _minTokenAmounts, _maxTokenAmounts, _admin);
     }
 
     function initialize(
         uint256 _fixedCryptoFee,
         uint256 _RubicPlatformFee,
-        address[] memory _routers,
         address[] memory _tokens,
         uint256[] memory _minTokenAmounts,
         uint256[] memory _maxTokenAmounts,
@@ -37,7 +35,6 @@ contract TestOnlySource is OnlySourceFunctionality {
         __OnlySourceFunctionalityInit(
             _fixedCryptoFee,
             _RubicPlatformFee,
-            _routers,
             _tokens,
             _minTokenAmounts,
             _maxTokenAmounts,
@@ -52,10 +49,6 @@ contract TestOnlySource is OnlySourceFunctionality {
         whenNotPaused
         eventEmitter(_params, _providerName)
     {
-        if (!availableRouters.contains(_params.router)) {
-            revert NotInWhitelist(_params.router);
-        }
-
         IntegratorFeeInfo memory _info = integratorToFeeInfo[_params.integrator];
 
         IERC20(_params.srcInputToken).transferFrom(msg.sender, address(this), _params.srcInputAmount);

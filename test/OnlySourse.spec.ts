@@ -64,10 +64,10 @@ describe('TestOnlySource', () => {
     });
 
     describe('right settings', () => {
-        it('routers', async () => {
-            const routers = await bridge.getAvailableRouters();
-            expect(routers).to.deep.eq([DEX.address]);
-        });
+        // it('routers', async () => {
+        //     const routers = await bridge.getAvailableRouters();
+        //     expect(routers).to.deep.eq([DEX.address]);
+        // });
         it('min max amounts', async () => {
             expect(await bridge.minTokenAmount(transitToken.address)).to.be.eq(
                 consts.MIN_TOKEN_AMOUNT
@@ -191,36 +191,36 @@ describe('TestOnlySource', () => {
             await bridge.setFixedCryptoFee('100');
             expect(await bridge.fixedCryptoFee()).to.be.eq('100');
         });
-        it('only manager can remove routers', async () => {
-            await expect(
-                bridge.connect(swapper).removeAvailableRouters([DEX.address])
-            ).to.be.revertedWithCustomError(bridge, 'NotAManager');
-
-            await bridge.removeAvailableRouters([DEX.address]);
-            expect(await bridge.getAvailableRouters()).to.be.deep.eq([]);
-        });
-        it('only manager can add routers', async () => {
-            await expect(
-                bridge.connect(swapper).addAvailableRouters([owner.address])
-            ).to.be.revertedWithCustomError(bridge, 'NotAManager');
-
-            await bridge.addAvailableRouters([owner.address]);
-
-            expect(await bridge.getAvailableRouters()).to.be.deep.eq([DEX.address, owner.address]);
-        });
-        it('possible to add multiple routers', async () => {
-            await bridge.addAvailableRouters([swapper.address, owner.address]);
-            expect(await bridge.getAvailableRouters()).to.be.deep.eq([
-                DEX.address,
-                swapper.address,
-                owner.address
-            ]);
-        });
-        it('possible to remove multiple routers', async () => {
-            await bridge.addAvailableRouters([swapper.address, owner.address]);
-            await bridge.removeAvailableRouters([DEX.address, owner.address]);
-            expect(await bridge.getAvailableRouters()).to.be.deep.eq([swapper.address]);
-        });
+        // it('only manager can remove routers', async () => {
+        //     await expect(
+        //         bridge.connect(swapper).removeAvailableRouters([DEX.address])
+        //     ).to.be.revertedWithCustomError(bridge, 'NotAManager');
+        //
+        //     await bridge.removeAvailableRouters([DEX.address]);
+        //     expect(await bridge.getAvailableRouters()).to.be.deep.eq([]);
+        // });
+        // it('only manager can add routers', async () => {
+        //     await expect(
+        //         bridge.connect(swapper).addAvailableRouters([owner.address])
+        //     ).to.be.revertedWithCustomError(bridge, 'NotAManager');
+        //
+        //     await bridge.addAvailableRouters([owner.address]);
+        //
+        //     expect(await bridge.getAvailableRouters()).to.be.deep.eq([DEX.address, owner.address]);
+        // });
+        // it('possible to add multiple routers', async () => {
+        //     await bridge.addAvailableRouters([swapper.address, owner.address]);
+        //     expect(await bridge.getAvailableRouters()).to.be.deep.eq([
+        //         DEX.address,
+        //         swapper.address,
+        //         owner.address
+        //     ]);
+        // });
+        // it('possible to remove multiple routers', async () => {
+        //     await bridge.addAvailableRouters([swapper.address, owner.address]);
+        //     await bridge.removeAvailableRouters([DEX.address, owner.address]);
+        //     expect(await bridge.getAvailableRouters()).to.be.deep.eq([swapper.address]);
+        // });
         it('validation of integratorFeeInfo', async () => {
             let feeInfo = {
                 isIntegrator: true,
@@ -306,11 +306,11 @@ describe('TestOnlySource', () => {
                     DEFAULT_PROVIDER_NAME
                 );
         });
-        it('cross chain with swap fails if router not available', async () => {
-            await expect(callBridge({ router: owner.address }))
-                .to.be.revertedWithCustomError(bridge, 'NotInWhitelist')
-                .withArgs(owner.address);
-        });
+        // it('cross chain with swap fails if router not available', async () => {
+        //     await expect(callBridge({ router: owner.address }))
+        //         .to.be.revertedWithCustomError(bridge, 'NotInWhitelist')
+        //         .withArgs(owner.address);
+        // });
         it('cross chain with swap amounts without integrator', async () => {
             await callBridge();
             const { feeAmount, amountWithoutFee, RubicFee } = await calcTokenFees({
