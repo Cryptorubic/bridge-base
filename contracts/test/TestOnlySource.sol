@@ -42,13 +42,10 @@ contract TestOnlySource is OnlySourceFunctionality {
         );
     }
 
-    function crossChainWithSwap(BaseCrossChainParams calldata _params, string calldata _providerName)
-        external
-        payable
-        nonReentrant
-        whenNotPaused
-        eventEmitter(_params, _providerName)
-    {
+    function crossChainWithSwap(
+        BaseCrossChainParams calldata _params,
+        string calldata _providerName
+    ) external payable nonReentrant whenNotPaused eventEmitter(_params, _providerName) {
         IntegratorFeeInfo memory _info = integratorToFeeInfo[_params.integrator];
 
         IERC20(_params.srcInputToken).transferFrom(msg.sender, address(this), _params.srcInputAmount);

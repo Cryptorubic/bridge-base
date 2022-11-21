@@ -18,11 +18,7 @@ abstract contract ECDSAOffsetRecovery {
         return keccak256(abi.encodePacked('\x19Ethereum Signed Message:\n32', hash));
     }
 
-    function ecOffsetRecover(
-        bytes32 hash,
-        bytes memory signature,
-        uint256 offset
-    ) public pure returns (address) {
+    function ecOffsetRecover(bytes32 hash, bytes memory signature, uint256 offset) public pure returns (address) {
         bytes32 r;
         bytes32 s;
         uint8 v;

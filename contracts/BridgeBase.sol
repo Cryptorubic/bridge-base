@@ -199,11 +199,10 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
      * @return _totalFee the amount of Rubic + integrator fee
      * @return _RubicFee the amount of Rubic fee only
      */
-    function _calculateFeeWithIntegrator(uint256 _amountWithFee, IntegratorFeeInfo memory _info)
-        internal
-        pure
-        returns (uint256 _totalFee, uint256 _RubicFee)
-    {
+    function _calculateFeeWithIntegrator(
+        uint256 _amountWithFee,
+        IntegratorFeeInfo memory _info
+    ) internal pure returns (uint256 _totalFee, uint256 _RubicFee) {
         if (_info.tokenFee > 0) {
             _totalFee = FullMath.mulDiv(_amountWithFee, _info.tokenFee, DENOMINATOR);
 
@@ -437,11 +436,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
         }
     }
 
-    function sendToken(
-        address _token,
-        uint256 _amount,
-        address _receiver
-    ) internal virtual {
+    function sendToken(address _token, uint256 _amount, address _receiver) internal virtual {
         if (_token == address(0)) {
             AddressUpgradeable.sendValue(payable(_receiver), _amount);
         } else {

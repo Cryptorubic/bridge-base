@@ -10,11 +10,7 @@ import '../errors/Errors.sol';
 library SmartApprove {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
-    function smartApprove(
-        address _tokenIn,
-        uint256 _amount,
-        address _to
-    ) internal {
+    function smartApprove(address _tokenIn, uint256 _amount, address _to) internal {
         IERC20Upgradeable tokenIn = IERC20Upgradeable(_tokenIn);
         uint256 _allowance = tokenIn.allowance(address(this), _to);
         if (_allowance < _amount) {
