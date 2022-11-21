@@ -302,8 +302,8 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
         emit FixedCryptoFeeCollected(_cryptoFee, msg.sender);
     }
 
-    function sweepTokens(address _token, uint256 _amount) external onlyAdmin {
-        sendToken(_token, _amount, msg.sender);
+    function sweepTokens(address _token, uint256 _amount, address _recipient) external onlyAdmin {
+        sendToken(_token, _amount, _recipient);
     }
 
     /// CONTROL FUNCTIONS ///
