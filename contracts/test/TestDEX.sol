@@ -20,7 +20,14 @@ contract TestDEX is ITestDEX {
         uint256 _inputAmount,
         address _toToken
     ) external override {
-        IERC20(_fromToken).transferFrom(msg.sender, address(this), _inputAmount);
-        IERC20(_toToken).transfer(msg.sender, _inputAmount * price);
+        IERC20(_fromToken).transferFrom(
+            msg.sender,
+            address(this),
+            _inputAmount
+        );
+        IERC20(_toToken).transfer(
+            msg.sender,
+            _inputAmount * price
+        );
     }
 }

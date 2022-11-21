@@ -1,14 +1,14 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es2020",
     "module": "commonjs",
     "declaration": true,
     "outDir": "./lib",
     "strict": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "typeRoots": ["./typechain", "./node_modules/@types", "./types"],
-    "types": ["@nomiclabs/hardhat-ethers", "@nomiclabs/hardhat-waffle"],
+    "typeRoots": ["./typechain-types", "./node_modules/@types", "./types"],
+    "types": ["node", "mocha", "@nomiclabs/hardhat-ethers", "@nomicfoundation/hardhat-chai-matchers"],
     "noImplicitAny": false
   },
   "include": ["index.ts"],

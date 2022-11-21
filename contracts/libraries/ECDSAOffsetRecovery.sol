@@ -9,13 +9,29 @@ abstract contract ECDSAOffsetRecovery {
         bytes32 originalTxHash,
         uint256 blockchainNum
     ) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(user, amountWithFee, originalTxHash, blockchainNum));
+        return
+            keccak256(
+                abi.encodePacked(
+                    user,
+                    amountWithFee,
+                    originalTxHash,
+                    blockchainNum
+                )
+            );
     }
 
-    function toEthSignedMessageHash(bytes32 hash) public pure returns (bytes32) {
+    function toEthSignedMessageHash(
+        bytes32 hash
+    ) public pure returns (bytes32) {
         // 32 is the length in bytes of hash,
         // enforced by the type signature above
-        return keccak256(abi.encodePacked('\x19Ethereum Signed Message:\n32', hash));
+        return
+            keccak256(
+                abi.encodePacked(
+                    '\x19Ethereum Signed Message:\n32',
+                    hash
+                )
+            );
     }
 
     function ecOffsetRecover(
@@ -31,7 +47,10 @@ abstract contract ECDSAOffsetRecovery {
         assembly {
             r := mload(add(signature, add(offset, 0x20)))
             s := mload(add(signature, add(offset, 0x40)))
-            v := byte(0, mload(add(signature, add(offset, 0x60))))
+            v := byte(
+                0,
+                mload(add(signature, add(offset, 0x60)))
+            )
         }
 
         // Version of signature should be 27 or 28, but 0 and 1 are also possible versions

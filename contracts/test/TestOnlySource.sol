@@ -16,46 +16,58 @@ contract TestOnlySource is OnlySourceFunctionality {
     constructor(
         uint256 _fixedCryptoFee,
         uint256 _RubicPlatformFee,
-        address[] memory _routers,
         address[] memory _tokens,
         uint256[] memory _minTokenAmounts,
-        uint256[] memory _maxTokenAmounts
+        uint256[] memory _maxTokenAmounts,
+        address _admin
     ) {
-        initialize(_fixedCryptoFee, _RubicPlatformFee, _routers, _tokens, _minTokenAmounts, _maxTokenAmounts);
+        initialize(
+            _fixedCryptoFee,
+            _RubicPlatformFee,
+            _tokens,
+            _minTokenAmounts,
+            _maxTokenAmounts,
+            _admin
+        );
     }
 
     function initialize(
         uint256 _fixedCryptoFee,
         uint256 _RubicPlatformFee,
-        address[] memory _routers,
         address[] memory _tokens,
         uint256[] memory _minTokenAmounts,
-        uint256[] memory _maxTokenAmounts
+        uint256[] memory _maxTokenAmounts,
+        address _admin
     ) private initializer {
         __OnlySourceFunctionalityInit(
             _fixedCryptoFee,
             _RubicPlatformFee,
-            _routers,
             _tokens,
             _minTokenAmounts,
-            _maxTokenAmounts
+            _maxTokenAmounts,
+            _admin
         );
     }
 
-    function crossChainWithSwap(BaseCrossChainParams calldata _params, string calldata _providerName)
+    function crossChainWithSwap(
+        BaseCrossChainParams calldata _params,
+        string calldata _providerName
+    )
         external
         payable
         nonReentrant
         whenNotPaused
         eventEmitter(_params, _providerName)
     {
-        if (!availableRouters.contains(_params.router)) {
-            revert NotInWhitelist(_params.router);
-        }
+        IntegratorFeeInfo memory _info = integratorToFeeInfo[
+            _params.integrator
+        ];
 
-        IntegratorFeeInfo memory _info = integratorToFeeInfo[_params.integrator];
-
-        IERC20(_params.srcInputToken).transferFrom(msg.sender, address(this), _params.srcInputAmount);
+        IERC20(_params.srcInputToken).transferFrom(
+            msg.sender,
+            address(this),
+            _params.srcInputAmount
+        );
 
         accrueFixedCryptoFee(_params.integrator, _info);
 
@@ -67,8 +79,16 @@ contract TestOnlySource is OnlySourceFunctionality {
             _params.srcInputToken
         );
 
-        SmartApprove.smartApprove(_params.srcInputToken, _amountIn, _params.router);
+        SmartApprove.smartApprove(
+            _params.srcInputToken,
+            _amountIn,
+            _params.router
+        );
 
-        ITestDEX(_params.router).swap(_params.srcInputToken, _amountIn, _params.dstOutputToken);
+        ITestDEX(_params.router).swap(
+            _params.srcInputToken,
+            _amountIn,
+            _params.dstOutputToken
+        );
     }
 }

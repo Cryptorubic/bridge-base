@@ -1,5 +1,4 @@
 import { TestOnlySource, TestDEX, TestERC20 } from '../../typechain-types';
-import { Fixture } from 'ethereum-waffle';
 import { ethers } from 'hardhat';
 import { RUBIC_PLATFORM_FEE, MIN_TOKEN_AMOUNT, MAX_TOKEN_AMOUNT, FIXED_CRYPTO_FEE } from './consts';
 
@@ -35,16 +34,16 @@ const bridgeFixture = async function (): Promise<{
     return { transitToken, swapToken, DEX };
 };
 
-export const onlySourceFixture: Fixture<BridgeFixture> = async function (): Promise<BridgeFixture> {
+export const onlySourceFixture = async function (): Promise<BridgeFixture> {
     const { transitToken, swapToken, DEX } = await bridgeFixture();
     const bridgeFactory = await ethers.getContractFactory('TestOnlySource');
     const bridge = (await bridgeFactory.deploy(
         FIXED_CRYPTO_FEE,
         RUBIC_PLATFORM_FEE,
-        [DEX.address],
         [transitToken.address, swapToken.address],
         [MIN_TOKEN_AMOUNT, MIN_TOKEN_AMOUNT],
-        [MAX_TOKEN_AMOUNT, MAX_TOKEN_AMOUNT]
+        [MAX_TOKEN_AMOUNT, MAX_TOKEN_AMOUNT],
+        await bridgeFactory.signer.getAddress()
     )) as Bridge;
 
     return { bridge, transitToken, swapToken, DEX };

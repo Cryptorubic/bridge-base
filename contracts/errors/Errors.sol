@@ -17,3 +17,4 @@ error MaxMustBeBiggerThanMin();
 error CantSetToNull();
 error Unchangeable();
 error LengthMismatch();
+error NotPendingAdmin();
