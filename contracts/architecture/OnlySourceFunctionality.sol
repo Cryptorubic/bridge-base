@@ -5,9 +5,15 @@ pragma solidity ^0.8.4;
 import '../BridgeBase.sol';
 
 contract OnlySourceFunctionality is BridgeBase {
-    event RequestSent(BaseCrossChainParams parameters, string providerName);
+    event RequestSent(
+        BaseCrossChainParams parameters,
+        string providerName
+    );
 
-    modifier eventEmitter(BaseCrossChainParams calldata _params, string calldata _providerName) {
+    modifier eventEmitter(
+        BaseCrossChainParams calldata _params,
+        string calldata _providerName
+    ) {
         _;
         emit RequestSent(_params, _providerName);
     }
@@ -20,6 +26,13 @@ contract OnlySourceFunctionality is BridgeBase {
         uint256[] memory _maxTokenAmounts,
         address _admin
     ) internal onlyInitializing {
-        __BridgeBaseInit(_fixedCryptoFee, _RubicPlatformFee, _tokens, _minTokenAmounts, _maxTokenAmounts, _admin);
+        __BridgeBaseInit(
+            _fixedCryptoFee,
+            _RubicPlatformFee,
+            _tokens,
+            _minTokenAmounts,
+            _maxTokenAmounts,
+            _admin
+        );
     }
 }

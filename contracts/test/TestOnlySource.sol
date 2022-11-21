@@ -21,7 +21,14 @@ contract TestOnlySource is OnlySourceFunctionality {
         uint256[] memory _maxTokenAmounts,
         address _admin
     ) {
-        initialize(_fixedCryptoFee, _RubicPlatformFee, _tokens, _minTokenAmounts, _maxTokenAmounts, _admin);
+        initialize(
+            _fixedCryptoFee,
+            _RubicPlatformFee,
+            _tokens,
+            _minTokenAmounts,
+            _maxTokenAmounts,
+            _admin
+        );
     }
 
     function initialize(
@@ -45,10 +52,22 @@ contract TestOnlySource is OnlySourceFunctionality {
     function crossChainWithSwap(
         BaseCrossChainParams calldata _params,
         string calldata _providerName
-    ) external payable nonReentrant whenNotPaused eventEmitter(_params, _providerName) {
-        IntegratorFeeInfo memory _info = integratorToFeeInfo[_params.integrator];
+    )
+        external
+        payable
+        nonReentrant
+        whenNotPaused
+        eventEmitter(_params, _providerName)
+    {
+        IntegratorFeeInfo memory _info = integratorToFeeInfo[
+            _params.integrator
+        ];
 
-        IERC20(_params.srcInputToken).transferFrom(msg.sender, address(this), _params.srcInputAmount);
+        IERC20(_params.srcInputToken).transferFrom(
+            msg.sender,
+            address(this),
+            _params.srcInputAmount
+        );
 
         accrueFixedCryptoFee(_params.integrator, _info);
 
@@ -60,8 +79,16 @@ contract TestOnlySource is OnlySourceFunctionality {
             _params.srcInputToken
         );
 
-        SmartApprove.smartApprove(_params.srcInputToken, _amountIn, _params.router);
+        SmartApprove.smartApprove(
+            _params.srcInputToken,
+            _amountIn,
+            _params.router
+        );
 
-        ITestDEX(_params.router).swap(_params.srcInputToken, _amountIn, _params.dstOutputToken);
+        ITestDEX(_params.router).swap(
+            _params.srcInputToken,
+            _amountIn,
+            _params.dstOutputToken
+        );
     }
 }

@@ -12,8 +12,16 @@ contract WithDestinationFunctionality is BridgeBase {
         Fallback
     }
 
-    event CrossChainRequestSent(bytes32 indexed id, BaseCrossChainParams parameters);
-    event CrossChainProcessed(bytes32 indexed id, address outputTokenAddress, uint256 amount, SwapStatus status);
+    event CrossChainRequestSent(
+        bytes32 indexed id,
+        BaseCrossChainParams parameters
+    );
+    event CrossChainProcessed(
+        bytes32 indexed id,
+        address outputTokenAddress,
+        uint256 amount,
+        SwapStatus status
+    );
 
     mapping(bytes32 => SwapStatus) public processedTransactions;
 
@@ -21,7 +29,8 @@ contract WithDestinationFunctionality is BridgeBase {
 
     uint256 public availableRubicGasFee;
 
-    bytes32 public constant RELAYER_ROLE = keccak256('RELAYER_ROLE');
+    bytes32 public constant RELAYER_ROLE =
+        keccak256('RELAYER_ROLE');
 
     modifier onlyRelayer(address _relayer) {
         checkIsRelayer(_relayer);
@@ -38,7 +47,14 @@ contract WithDestinationFunctionality is BridgeBase {
         uint256[] memory _blockchainToGasFee,
         address _admin
     ) internal onlyInitializing {
-        __BridgeBaseInit(_fixedCryptoFee, _RubicPlatformFee, _tokens, _minTokenAmounts, _maxTokenAmounts, _admin);
+        __BridgeBaseInit(
+            _fixedCryptoFee,
+            _RubicPlatformFee,
+            _tokens,
+            _minTokenAmounts,
+            _maxTokenAmounts,
+            _admin
+        );
 
         uint256 length = _blockchainIDs.length;
         if (_blockchainToGasFee.length != length) {
@@ -46,7 +62,9 @@ contract WithDestinationFunctionality is BridgeBase {
         }
 
         for (uint256 i; i < length; ) {
-            blockchainToGasFee[_blockchainIDs[i]] = _blockchainToGasFee[i];
+            blockchainToGasFee[
+                _blockchainIDs[i]
+            ] = _blockchainToGasFee[i];
 
             unchecked {
                 ++i;
@@ -69,7 +87,9 @@ contract WithDestinationFunctionality is BridgeBase {
         uint256 _gasFee = blockchainToGasFee[_blockchainID];
         availableRubicGasFee += _gasFee;
 
-        _amountWithoutCryptoFee = accrueFixedCryptoFee(_integrator, _info) - _gasFee;
+        _amountWithoutCryptoFee =
+            accrueFixedCryptoFee(_integrator, _info) -
+            _gasFee;
     }
 
     /// FEE MANAGEMENT ///
@@ -79,11 +99,16 @@ contract WithDestinationFunctionality is BridgeBase {
      * @param _blockchainID ID of the blockchain
      * @param _gasFee Fee amount of native token that must be sent in init call
      */
-    function setGasFeeOfBlockchain(uint256 _blockchainID, uint256 _gasFee) external onlyManagerOrAdmin {
+    function setGasFeeOfBlockchain(
+        uint256 _blockchainID,
+        uint256 _gasFee
+    ) external onlyManagerOrAdmin {
         blockchainToGasFee[_blockchainID] = _gasFee;
     }
 
-    function collectGasFee(address _to) external onlyManagerOrAdmin {
+    function collectGasFee(
+        address _to
+    ) external onlyManagerOrAdmin {
         uint256 _gasFee = availableRubicGasFee;
         availableRubicGasFee = 0;
         sendToken(address(0), _gasFee, _to);
@@ -96,14 +121,20 @@ contract WithDestinationFunctionality is BridgeBase {
      * @param _id ID of the transaction to change
      * @param _statusCode Associated status
      */
-    function changeTxStatus(bytes32 _id, SwapStatus _statusCode) external onlyManagerOrAdmin {
+    function changeTxStatus(
+        bytes32 _id,
+        SwapStatus _statusCode
+    ) external onlyManagerOrAdmin {
         if (_statusCode == SwapStatus.Null) {
             revert CantSetToNull();
         }
 
         SwapStatus _status = processedTransactions[_id];
 
-        if (_status == SwapStatus.Succeeded || _status == SwapStatus.Fallback) {
+        if (
+            _status == SwapStatus.Succeeded ||
+            _status == SwapStatus.Fallback
+        ) {
             revert Unchangeable();
         }
 
