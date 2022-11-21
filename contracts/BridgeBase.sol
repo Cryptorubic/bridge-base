@@ -37,6 +37,8 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
     // token -> integrator collected fees
     mapping(address => mapping(address => uint256)) public availableIntegratorTokenFee;
 
+    // limit the max Rubic token fee
+    uint256 public maxRubicPlatformFee = 250_000; // 25%
     // Rubic token fee
     uint256 public RubicPlatformFee;
     // Rubic fixed fee for swap
@@ -338,12 +340,29 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
         fixedCryptoFee = _fixedCryptoFee;
     }
 
+    /**
+     * @dev Sets Rubic token fee
+     * @notice Cannot be higher than limit set only by an admin
+     * @param _platformFee Fixed crypto fee
+     */
     function setRubicPlatformFee(uint256 _platformFee) external onlyManagerOrAdmin {
-        if (_platformFee > DENOMINATOR) {
+        if (_platformFee > maxRubicPlatformFee) {
             revert FeeTooHigh();
         }
 
         RubicPlatformFee = _platformFee;
+    }
+
+    /**
+     * @dev Sets the limit of Rubic token fee
+     * @param _maxFee The limit
+     */
+    function setMaxRubicPlatformFee(uint256 _maxFee) external onlyAdmin {
+        if (_maxFee > DENOMINATOR) {
+            revert FeeTooHigh();
+        }
+
+        maxRubicPlatformFee = _maxFee;
     }
 
     /**
