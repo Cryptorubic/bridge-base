@@ -19,9 +19,10 @@ contract TestOnlySource is OnlySourceFunctionality {
         address[] memory _routers,
         address[] memory _tokens,
         uint256[] memory _minTokenAmounts,
-        uint256[] memory _maxTokenAmounts
+        uint256[] memory _maxTokenAmounts,
+        address _admin
     ) {
-        initialize(_fixedCryptoFee, _RubicPlatformFee, _routers, _tokens, _minTokenAmounts, _maxTokenAmounts);
+        initialize(_fixedCryptoFee, _RubicPlatformFee, _routers, _tokens, _minTokenAmounts, _maxTokenAmounts, _admin);
     }
 
     function initialize(
@@ -30,7 +31,8 @@ contract TestOnlySource is OnlySourceFunctionality {
         address[] memory _routers,
         address[] memory _tokens,
         uint256[] memory _minTokenAmounts,
-        uint256[] memory _maxTokenAmounts
+        uint256[] memory _maxTokenAmounts,
+        address _admin
     ) private initializer {
         __OnlySourceFunctionalityInit(
             _fixedCryptoFee,
@@ -38,7 +40,8 @@ contract TestOnlySource is OnlySourceFunctionality {
             _routers,
             _tokens,
             _minTokenAmounts,
-            _maxTokenAmounts
+            _maxTokenAmounts,
+            _admin
         );
     }
 

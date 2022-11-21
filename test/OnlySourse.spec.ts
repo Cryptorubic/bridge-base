@@ -152,7 +152,7 @@ describe('TestOnlySource', () => {
                 consts.MAX_TOKEN_AMOUNT.add('1')
             );
         });
-        it.only('manager cannot set Rubic fee higher than the limit', async () => {
+        it('manager cannot set Rubic fee higher than the limit', async () => {
             await expect(
                 bridge.connect(manager).setRubicPlatformFee(500000)
             ).to.be.revertedWithCustomError(bridge, 'FeeTooHigh');
@@ -160,7 +160,7 @@ describe('TestOnlySource', () => {
             await bridge.connect(manager).setRubicPlatformFee(249000);
             expect(await bridge.RubicPlatformFee()).to.be.eq(249000);
         });
-        it.only('only admin can set fee limit', async () => {
+        it('only admin can set fee limit', async () => {
             await expect(
                 bridge.connect(manager).setMaxRubicPlatformFee(500000)
             ).to.be.revertedWithCustomError(bridge, 'NotAnAdmin');

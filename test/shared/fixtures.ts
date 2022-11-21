@@ -43,7 +43,8 @@ export const onlySourceFixture = async function (): Promise<BridgeFixture> {
         [DEX.address],
         [transitToken.address, swapToken.address],
         [MIN_TOKEN_AMOUNT, MIN_TOKEN_AMOUNT],
-        [MAX_TOKEN_AMOUNT, MAX_TOKEN_AMOUNT]
+        [MAX_TOKEN_AMOUNT, MAX_TOKEN_AMOUNT],
+        await bridgeFactory.signer.getAddress()
     )) as Bridge;
 
     return { bridge, transitToken, swapToken, DEX };

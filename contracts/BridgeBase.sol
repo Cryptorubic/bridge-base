@@ -105,8 +105,13 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
         address[] memory _routers,
         address[] memory _tokens,
         uint256[] memory _minTokenAmounts,
-        uint256[] memory _maxTokenAmounts
+        uint256[] memory _maxTokenAmounts,
+        address _admin
     ) internal onlyInitializing {
+        if (_admin == address(0)) {
+            revert ZeroAddress();
+        }
+
         __Pausable_init_unchained();
 
         fixedCryptoFee = _fixedCryptoFee;
@@ -137,7 +142,7 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
             }
         }
 
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(DEFAULT_ADMIN_ROLE, _admin);
     }
 
     /**

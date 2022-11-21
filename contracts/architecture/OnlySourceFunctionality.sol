@@ -18,8 +18,9 @@ contract OnlySourceFunctionality is BridgeBase {
         address[] memory _routers,
         address[] memory _tokens,
         uint256[] memory _minTokenAmounts,
-        uint256[] memory _maxTokenAmounts
+        uint256[] memory _maxTokenAmounts,
+        address _admin
     ) internal onlyInitializing {
-        __BridgeBaseInit(_fixedCryptoFee, _RubicPlatformFee, _routers, _tokens, _minTokenAmounts, _maxTokenAmounts);
+        __BridgeBaseInit(_fixedCryptoFee, _RubicPlatformFee, _routers, _tokens, _minTokenAmounts, _maxTokenAmounts, _admin);
     }
 }
