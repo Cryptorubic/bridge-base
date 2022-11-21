@@ -497,7 +497,11 @@ describe('TestOnlySource', () => {
             expect(await swapToken.balanceOf(integratorWallet.address)).to.be.eq(integratorFee);
         });
         it('collect Rubic Token fee', async () => {
-            await bridge.collectRubicFee(swapToken.address);
+            await expect(
+                bridge.collectRubicFee(swapToken.address, manager.address)
+            ).to.be.revertedWithCustomError(bridge, 'NotAnAdmin');
+
+            await bridge.connect(owner).collectRubicFee(swapToken.address, manager.address);
 
             expect(await swapToken.balanceOf(manager.address)).to.be.eq(RubicFee);
         });
@@ -515,7 +519,11 @@ describe('TestOnlySource', () => {
         it('collect Rubic crypto fee', async () => {
             const tracker = await balance.tracker(manager.address);
 
-            await bridge.collectRubicCryptoFee();
+            await expect(
+                bridge.collectRubicCryptoFee(manager.address)
+            ).to.be.revertedWithCustomError(bridge, 'NotAnAdmin');
+
+            await bridge.connect(owner).collectRubicCryptoFee(manager.address);
 
             const { delta, fees } = await tracker.deltaWithFees();
 

@@ -282,27 +282,29 @@ contract BridgeBase is AccessControlUpgradeable, PausableUpgradeable, Reentrancy
     /**
      * @dev Calling this function managers can collect Rubic's token fee
      * @param _token The token to collect fees in
+     * @param _recipient The recipient
      */
-    function collectRubicFee(address _token) external onlyManagerOrAdmin {
+    function collectRubicFee(address _token, address _recipient) external onlyAdmin {
         uint256 _amount = availableRubicTokenFee[_token];
         if (_amount == 0) {
             revert ZeroAmount();
         }
 
         availableRubicTokenFee[_token] = 0;
-        sendToken(_token, _amount, msg.sender);
+        sendToken(_token, _amount, _recipient);
 
         emit RubicTokenFeeCollected(_amount, _token);
     }
 
     /**
      * @dev Calling this function managers can collect Rubic's fixed crypto fee
+     * @param _recipient The recipient
      */
-    function collectRubicCryptoFee() external onlyManagerOrAdmin {
+    function collectRubicCryptoFee(address _recipient) external onlyAdmin {
         uint256 _cryptoFee = availableRubicCryptoFee;
         availableRubicCryptoFee = 0;
 
-        sendToken(address(0), _cryptoFee, msg.sender);
+        sendToken(address(0), _cryptoFee, _recipient);
 
         emit FixedCryptoFeeCollected(_cryptoFee, msg.sender);
     }
