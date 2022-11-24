@@ -39,20 +39,20 @@ contract RubicBridge is OnlySourceFunctionality{
     
     function initialize(
         uint256 _fixedCryptoFee,
-        address[] memory _routers,
+        uint256 _RubicPlatformFee,
         address[] memory _tokens,
         uint256[] memory _minTokenAmounts,
         uint256[] memory _maxTokenAmounts,
-        uint256 _RubicPlatformFee
+        address _admin
         // Additional Parameters...
     ) external initializer { // notice: EXTERNAL
         __OnlySourceFunctionalityInit(
             _fixedCryptoFee,
-            _routers,
+            _RubicPlatformFee,
             _tokens,
             _minTokenAmounts,
             _maxTokenAmounts,
-            _RubicPlatformFee
+            _admin
         );
         
         // Additional Logic...
@@ -63,26 +63,26 @@ contract RubicBridge is OnlySourceFunctionality{
 _Use case for Non-Upgradeable_:
 
 ```solidity
-import 'rubic-bridge-base/contracts/tokens/MultipleTransitToken.sol';
+import 'rubic-bridge-base/contracts/architecture/OnlySourceFunctionality.sol';
 
-contract SwapBase is MultipleTransitToken {
+contract SwapBase is OnlySourceFunctionality {
     
     constructor (
         uint256 _fixedCryptoFee,
-        address[] memory _routers,
+        uint256 _RubicPlatformFee,
         address[] memory _tokens,
         uint256[] memory _minTokenAmounts,
         uint256[] memory _maxTokenAmounts,
-        uint256 _RubicPlatformFee
+        address _admin
         // Additional Parameters...
     ) {
         initialize(
             _fixedCryptoFee,
-            _routers,
+            _RubicPlatformFee,
             _tokens,
             _minTokenAmounts,
             _maxTokenAmounts,
-            _RubicPlatformFee
+            _admin
         );
         
         // Additional Logic...
@@ -90,25 +90,25 @@ contract SwapBase is MultipleTransitToken {
 
     function initialize(
         uint256 _fixedCryptoFee,
-        address[] memory _routers,
+        uint256 _RubicPlatformFee,
         address[] memory _tokens,
         uint256[] memory _minTokenAmounts,
         uint256[] memory _maxTokenAmounts,
-        uint256 _RubicPlatformFee
+        address _admin
     ) private initializer { // notice: PRIVATE
         __OnlySourceFunctionalityInit(
             _fixedCryptoFee,
-            _routers,
+            _RubicPlatformFee,
             _tokens,
             _minTokenAmounts,
             _maxTokenAmounts,
-            _RubicPlatformFee
+            _admin
         );
     }
 }
 ```
 
-When implementing the source swap function using OnlySourceFunctionality, it’s necessary to remove FixedCryptoFee and TokenFee by using the functions:
+When implementing the source swap function using OnlySourceFunctionality, it’s necessary to accrue FixedCryptoFee and TokenFee by using the functions:
 
 ```solidity
 /**
@@ -142,7 +142,7 @@ function accrueTokenFees(
 
 ##### Roles
 
-When the contract is initialized, the deployer is given only the DEFAULT_ADMIN_ROLE role.
+When the contract is initialized, an arbitrary address (passed into the constructor) is given only the DEFAULT_ADMIN_ROLE role.
 If additional roles are needed, they should be added either to the 'initialize' function or to the constructor.
 Depending on the Upgradeability.
 
@@ -222,7 +222,7 @@ And through the function
 function setFixedCryptoFee(uint256 _fixedCryptoFee) external onlyManagerAndAdmin
 ```
 
-Withdrawal for the Rubik team is implemented through
+Withdrawal for the Rubiс team is implemented through
 
 ```solidity
 function collectRubicCryptoFee() external onlyManagerAndAdmin
@@ -232,18 +232,9 @@ TokenFee
 
 TokenFee - fees collected as a percentage from the amount of tokens.
 
-If an integrator is specified, then the corresponding TokenFee is used, otherwise:
+If an integrator is not specified then the fees are calculated based on the RubicPlatformFee global variable, 
+otherwise the corresponding tokenFee to the specified integrator is used. 
 
-1) When using OnlySourceFunctionality:
-```solidity
-uint256 public RubicPlatformFee;
-```
-2) When using WithDestinationFunctionality:
-
-For a more flexible Rubic fee, it is possible to specify a fee depending on the source blockchain if WithDestinationFunctionality is used:
-```solidity
-mapping(uint256 => uint256) public blockchainToRubicPlatformFee;
-```
 
 ##### Events
 The functions use the modifier:
@@ -330,64 +321,12 @@ And it is prohibited:
 * To set the Null status
 * To change status with Success and Fallback
 
-##### Allowed Routers
-
-For the possibility of creating bridges with swaps on various DEXs, there is a
-basis for implementing the logic of supported DEXs 
-
-```solidity
-EnumerableSetUpgradeable.AddressSet internal availableRouters;
-```
-
-Use Case:
-
-```solidity
-if (!availableRouters.contains(dex)) {
-   return false;
-}
-```
-
-Also, for a convenient browse of the supported routers, there is a view external function
-
-```solidity
-function getAvailableRouters() external view returns(address[] memory)
-```
-
-Use the following function to add a router:
-
-```solidity
-function addAvailableRouter(address _router) external onlyManagerAndAdmin
-```
-
-Routers can also be added during initialization
-
-```solidity
-address[] memory _routers
-```
 
 ##### Other
 
 _Min Max Amounts_
 
 There is a possibility of limiting the maximum and minimum amounts
-
-For SingleTransitToken:
-
-While initialization:
-
-```solidity
-uint256 _minTokenAmount,
-uint256 _maxTokenAmount,
-```
-
-Or through external functions:
-
-```solidity
-function setMinTokenAmount(uint256 _minTokenAmount)
-function setMaxTokenAmount(uint256 _maxTokenAmount)
-```
-
-For MultipleTransitToken:
 
 While initialization:
 
@@ -408,7 +347,7 @@ function setMinTokenAmount(address _token, uint256 _minTokenAmount)
      onlyManagerAndAdmin
 ```
 
-_ Function for sending tokens_
+_Function for sending tokens_
 
 There is a function for sending native tokens and ERC-20 with the rewriting option
 
