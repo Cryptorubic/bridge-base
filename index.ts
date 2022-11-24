@@ -1,3 +1,3 @@
-import { calcCryptoFees, calcTokenFees } from './test/shared/utils';
+import { calcCryptoFees, calcTokenFees, calcTokenFeesFromUser } from './test/shared/utils';
 
-export { calcCryptoFees, calcTokenFees };
+export { calcCryptoFees, calcTokenFees, calcTokenFeesFromUser };
