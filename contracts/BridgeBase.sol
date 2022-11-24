@@ -80,6 +80,9 @@ contract BridgeBase is
         address token
     );
     event RubicTokenFeeCollected(uint256 amount, address token);
+    event SweepTokens(address token, uint256 amount, address recipient);
+    event SetFixedCryptoFee(uint256 fee);
+    event SetRubicPlatformFee(uint256 fee);
     event InitAdminTransfer(
         address admintShifter,
         address newAdmin
@@ -403,6 +406,8 @@ contract BridgeBase is
         address _recipient
     ) external onlyAdmin {
         sendToken(_token, _amount, _recipient);
+
+        emit SweepTokens(_token, _amount, _recipient);
     }
 
     /// CONTROL FUNCTIONS ///
@@ -445,6 +450,8 @@ contract BridgeBase is
         uint256 _fixedCryptoFee
     ) external onlyManagerOrAdmin {
         fixedCryptoFee = _fixedCryptoFee;
+
+        emit SetFixedCryptoFee(_fixedCryptoFee);
     }
 
     /**
@@ -460,6 +467,8 @@ contract BridgeBase is
         }
 
         RubicPlatformFee = _platformFee;
+
+        emit SetRubicPlatformFee(_platformFee);
     }
 
     /**
